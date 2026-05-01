@@ -1,4 +1,4 @@
-import { event, select } from 'd3-selection';
+import { select } from 'd3-selection';
 import { drag } from 'd3-drag';
 import onDragEnd from './onDragEnd';
 
@@ -33,11 +33,10 @@ const drawStrum = (
     .attr('stroke-width', 2);
 
   _drag
-    .on('drag', function(d, i) {
-      const ev = event;
-      i = i + 1;
-      strum['p' + i][0] = Math.min(Math.max(strum.minX + 1, ev.x), strum.maxX);
-      strum['p' + i][1] = Math.min(Math.max(strum.minY, ev.y), strum.maxY);
+    .on('drag', function(event, d) {
+      const i = points.indexOf(d) + 1;
+      strum['p' + i][0] = Math.min(Math.max(strum.minX + 1, event.x), strum.maxX);
+      strum['p' + i][1] = Math.min(Math.max(strum.minY, event.y), strum.maxY);
       drawStrum(brushGroup, state, config, pc, events, strum, i - 1);
     })
     .on('end', onDragEnd(brushGroup, state, config, pc, events));
@@ -65,17 +64,16 @@ const drawStrum = (
     .call(_drag);
 };
 
-const onDrag = (brushGroup, state, config, pc, events) => () => {
-  const ev = event,
-    strum = state.strums[state.strums.active];
+const onDrag = (brushGroup, state, config, pc, events) => (event) => {
+  const strum = state.strums[state.strums.active];
 
   // Make sure that the point is within the bounds
   strum.p2[0] = Math.min(
-    Math.max(strum.minX + 1, ev.x - config.margin.left),
+    Math.max(strum.minX + 1, event.x - config.margin.left),
     strum.maxX
   );
   strum.p2[1] = Math.min(
-    Math.max(strum.minY, ev.y - config.margin.top),
+    Math.max(strum.minY, event.y - config.margin.top),
     strum.maxY
   );
 

@@ -1,5 +1,5 @@
 import { brushY, brushSelection } from 'd3-brush';
-import { event, select } from 'd3-selection';
+import { select } from 'd3-selection';
 import drawBrushes from './drawBrushes';
 import selected from './selected';
 
@@ -44,7 +44,7 @@ const newBrush = (state, config, pc, events, brushGroup) => (
   }
 
   brush
-    .on('start', function() {
+    .on('start', function(event) {
       if (event.sourceEvent !== null) {
         events.call('brushstart', pc, config.brushed);
         if (typeof event.sourceEvent.stopPropagation === 'function') {
@@ -52,7 +52,7 @@ const newBrush = (state, config, pc, events, brushGroup) => (
         }
       }
     })
-    .on('brush', function(e) {
+    .on('brush', function() {
       // record selections
       brushUpdated(
         config,
@@ -60,7 +60,7 @@ const newBrush = (state, config, pc, events, brushGroup) => (
         events
       )(selected(state, config, pc, events, brushGroup));
     })
-    .on('end', function() {
+    .on('end', function(event) {
       // Figure out if our latest brush has a selection
       const lastBrushID = brushes[axis][brushes[axis].length - 1].id;
       const lastBrush = document.getElementById(

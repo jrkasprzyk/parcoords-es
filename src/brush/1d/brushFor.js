@@ -1,5 +1,4 @@
 import { brushY, brushSelection } from 'd3-brush';
-import { event } from 'd3-selection';
 import invertByScale from '../invertByScale';
 import selected from './selected';
 
@@ -53,7 +52,7 @@ const brushFor = (state, config, pc, events, brushGroup) => (
   };
 
   _brush
-    .on('start', function() {
+    .on('start', function(event) {
       if (event.sourceEvent !== null) {
         events.call(
           'brushstart',

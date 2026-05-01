@@ -1,5 +1,5 @@
 import { brushSelection, brushY } from 'd3-brush';
-import { event, select } from 'd3-selection';
+import { select } from 'd3-selection';
 
 const brushable = (config, pc, flags) =>
   function() {
@@ -20,17 +20,17 @@ const brushable = (config, pc, flags) =>
           ]);
           select(this).call(
             config.dimensions[d]['brush']
-              .on('start', function() {
+              .on('start', function(event) {
                 if (event.sourceEvent !== null && !event.sourceEvent.ctrlKey) {
                   pc.brushReset();
                 }
               })
-              .on('brush', function() {
+              .on('brush', function(event) {
                 if (!event.sourceEvent.ctrlKey) {
                   pc.brush();
                 }
               })
-              .on('end', function() {
+              .on('end', function(event) {
                 // save brush selection is ctrl key is held
                 // store important brush information and
                 // the html element of the selection,

@@ -1,6 +1,4 @@
-import { event } from 'd3-selection';
-
-const rotateLabels = (config, pc) => {
+const rotateLabels = (config, pc) => (event) => {
   if (!config.rotateLabels) return;
 
   let delta = event.deltaY;

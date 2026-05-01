@@ -1,4 +1,4 @@
-import { mouse } from 'd3-selection';
+import { pointer } from 'd3-selection';
 import { arc as d3Arc } from 'd3-shape';
 import dimensionsForPoint from '../dimensionsForPoint';
 import h from '../../util/height';
@@ -7,8 +7,8 @@ import h from '../../util/height';
 // This will determine the freedom of movement, because a arc can
 // logically only happen between two axes, so no movement outside these axes
 // should be allowed.
-const onDragStart = (state, config, pc, xscale) => () => {
-  const p = mouse(state.strumRect.node());
+const onDragStart = (state, config, pc, xscale) => (event) => {
+  const p = pointer(event, state.strumRect.node());
 
   p[0] = p[0] - config.margin.left;
   p[1] = p[1] - config.margin.top;

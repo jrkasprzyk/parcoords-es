@@ -1,4 +1,4 @@
-import { mouse } from 'd3-selection';
+import { pointer } from 'd3-selection';
 import h from '../../util/height';
 import dimensionsForPoint from '../dimensionsForPoint';
 
@@ -6,8 +6,8 @@ import dimensionsForPoint from '../dimensionsForPoint';
 // This will determine the freedom of movement, because a strum can
 // logically only happen between two axes, so no movement outside these axes
 // should be allowed.
-const onDragStart = (state, config, pc, xscale) => () => {
-  let p = mouse(state.strumRect.node());
+const onDragStart = (state, config, pc, xscale) => (event) => {
+  let p = pointer(event, state.strumRect.node());
 
   p[0] = p[0] - config.margin.left;
   p[1] = p[1] - config.margin.top;

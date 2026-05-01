@@ -1,11 +1,10 @@
 import 'requestanimationframe';
-import { select, event, mouse, selectAll } from 'd3-selection';
+import { select, pointer, selectAll } from 'd3-selection';
 import { brushSelection, brushY } from 'd3-brush';
 import { drag } from 'd3-drag';
 import { arc } from 'd3-shape';
 import { scaleOrdinal, scalePoint, scaleLinear, scaleTime } from 'd3-scale';
 import { extent, min, ascending } from 'd3-array';
-import { entries, keys } from 'd3-collection';
 import { axisLeft, axisBottom, axisTop, axisRight } from 'd3-axis';
 import { dispatch } from 'd3-dispatch';
 
@@ -288,7 +287,7 @@ var brushFor$1 = function brushFor(state, config, pc, events, brushGroup) {
         }
       };
     };
-    _brush.on('start', function () {
+    _brush.on('start', function (event) {
       if (event.sourceEvent !== null) {
         events.call('brushstart', pc, config.brushed, convertBrushArguments(arguments));
         if (typeof event.sourceEvent.stopPropagation === 'function') {
@@ -376,6 +375,9 @@ function _arrayLikeToArray(r, a) {
   for (var e = 0, n = Array(a); e < a; e++) n[e] = r[e];
   return n;
 }
+function _arrayWithHoles(r) {
+  if (Array.isArray(r)) return r;
+}
 function _createForOfIteratorHelper(r, e) {
   var t = "undefined" != typeof Symbol && r[Symbol.iterator] || r["@@iterator"];
   if (!t) {
@@ -432,6 +434,36 @@ function _defineProperty(e, r, t) {
     writable: true
   }) : e[r] = t, e;
 }
+function _iterableToArrayLimit(r, l) {
+  var t = null == r ? null : "undefined" != typeof Symbol && r[Symbol.iterator] || r["@@iterator"];
+  if (null != t) {
+    var e,
+      n,
+      i,
+      u,
+      a = [],
+      f = true,
+      o = false;
+    try {
+      if (i = (t = t.call(r)).next, 0 === l) {
+        if (Object(t) !== t) return;
+        f = !1;
+      } else for (; !(f = (e = i.call(t)).done) && (a.push(e.value), a.length !== l); f = !0);
+    } catch (r) {
+      o = true, n = r;
+    } finally {
+      try {
+        if (!f && null != t.return && (u = t.return(), Object(u) !== u)) return;
+      } finally {
+        if (o) throw n;
+      }
+    }
+    return a;
+  }
+}
+function _nonIterableRest() {
+  throw new TypeError("Invalid attempt to destructure non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method.");
+}
 function ownKeys(e, r) {
   var t = Object.keys(e);
   if (Object.getOwnPropertySymbols) {
@@ -452,6 +484,9 @@ function _objectSpread2(e) {
     });
   }
   return e;
+}
+function _slicedToArray(r, e) {
+  return _arrayWithHoles(r) || _iterableToArrayLimit(r, e) || _unsupportedIterableToArray(r, e) || _nonIterableRest();
 }
 function _toPrimitive(t, r) {
   if ("object" != typeof t || !t) return t;
@@ -679,17 +714,17 @@ var _newBrush = function newBrush(state, config, pc, events, brushGroup) {
         node: node
       }];
     }
-    brush.on('start', function () {
+    brush.on('start', function (event) {
       if (event.sourceEvent !== null) {
         events.call('brushstart', pc, config.brushed);
         if (typeof event.sourceEvent.stopPropagation === 'function') {
           event.sourceEvent.stopPropagation();
         }
       }
-    }).on('brush', function (e) {
+    }).on('brush', function () {
       // record selections
       brushUpdated(config, pc, events)(selected$3(state, config, pc, events, brushGroup));
-    }).on('end', function () {
+    }).on('end', function (event) {
       // Figure out if our latest brush has a selection
       var lastBrushID = brushes[axis][brushes[axis].length - 1].id;
       var lastBrush = document.getElementById('brush-' + Object.keys(config.dimensions).indexOf(axis) + '-' + lastBrushID);
@@ -988,11 +1023,10 @@ var _drawStrum$1 = function drawStrum(brushGroup, state, config, pc, events, str
   }).attr('y2', function (d) {
     return d.p2[1];
   }).attr('stroke', 'black').attr('stroke-width', 2);
-  _drag.on('drag', function (d, i) {
-    var ev = event;
-    i = i + 1;
-    strum['p' + i][0] = Math.min(Math.max(strum.minX + 1, ev.x), strum.maxX);
-    strum['p' + i][1] = Math.min(Math.max(strum.minY, ev.y), strum.maxY);
+  _drag.on('drag', function (event, d) {
+    var i = points.indexOf(d) + 1;
+    strum['p' + i][0] = Math.min(Math.max(strum.minX + 1, event.x), strum.maxX);
+    strum['p' + i][1] = Math.min(Math.max(strum.minY, event.y), strum.maxY);
     _drawStrum$1(brushGroup, state, config, pc, events, strum, i - 1);
   }).on('end', onDragEnd$1(brushGroup, state, config, pc, events));
   circles.enter().append('circle').attr('id', 'strum-' + id).attr('class', 'strum');
@@ -1009,13 +1043,12 @@ var _drawStrum$1 = function drawStrum(brushGroup, state, config, pc, events, str
   }).call(_drag);
 };
 var onDrag$1 = function onDrag(brushGroup, state, config, pc, events) {
-  return function () {
-    var ev = event,
-      strum = state.strums[state.strums.active];
+  return function (event) {
+    var strum = state.strums[state.strums.active];
 
     // Make sure that the point is within the bounds
-    strum.p2[0] = Math.min(Math.max(strum.minX + 1, ev.x - config.margin.left), strum.maxX);
-    strum.p2[1] = Math.min(Math.max(strum.minY, ev.y - config.margin.top), strum.maxY);
+    strum.p2[0] = Math.min(Math.max(strum.minX + 1, event.x - config.margin.left), strum.maxX);
+    strum.p2[1] = Math.min(Math.max(strum.minY, event.y - config.margin.top), strum.maxY);
     _drawStrum$1(brushGroup, state, config, pc, events, strum, 1);
   };
 };
@@ -1058,8 +1091,8 @@ var dimensionsForPoint = function dimensionsForPoint(config, pc, xscale, p) {
 // logically only happen between two axes, so no movement outside these axes
 // should be allowed.
 var onDragStart$1 = function onDragStart(state, config, pc, xscale) {
-  return function () {
-    var p = mouse(state.strumRect.node());
+  return function (event) {
+    var p = pointer(event, state.strumRect.node());
     p[0] = p[0] - config.margin.left;
     p[1] = p[1] - config.margin.top;
     var dims = dimensionsForPoint(config, pc, xscale, p);
@@ -1305,11 +1338,10 @@ var _drawStrum = function drawStrum(brushGroup, state, config, pc, events, arc, 
   }).attr('y2', function (d) {
     return d.p2[1];
   }).attr('stroke', 'black').attr('stroke-width', 2);
-  _drag.on('drag', function (d, i) {
-    var ev = event;
-    i = i + 2;
-    arc['p' + i][0] = Math.min(Math.max(arc.minX + 1, ev.x), arc.maxX);
-    arc['p' + i][1] = Math.min(Math.max(arc.minY, ev.y), arc.maxY);
+  _drag.on('drag', function (event, d) {
+    var i = points.indexOf(d) + 2;
+    arc['p' + i][0] = Math.min(Math.max(arc.minX + 1, event.x), arc.maxX);
+    arc['p' + i][1] = Math.min(Math.max(arc.minY, event.y), arc.maxY);
     var angle = i === 3 ? state.arcs.startAngle(id) : state.arcs.endAngle(id);
     if (arc.startAngle < Math.PI && arc.endAngle < Math.PI && angle < Math.PI || arc.startAngle >= Math.PI && arc.endAngle >= Math.PI && angle >= Math.PI) {
       if (i === 2) {
@@ -1336,13 +1368,12 @@ var _drawStrum = function drawStrum(brushGroup, state, config, pc, events, arc, 
   }).call(_drag);
 };
 var onDrag = function onDrag(brushGroup, state, config, pc, events) {
-  return function () {
-    var ev = event,
-      arc = state.arcs[state.arcs.active];
+  return function (event) {
+    var arc = state.arcs[state.arcs.active];
 
     // Make sure that the point is within the bounds
-    arc.p2[0] = Math.min(Math.max(arc.minX + 1, ev.x - config.margin.left), arc.maxX);
-    arc.p2[1] = Math.min(Math.max(arc.minY, ev.y - config.margin.top), arc.maxY);
+    arc.p2[0] = Math.min(Math.max(arc.minX + 1, event.x - config.margin.left), arc.maxX);
+    arc.p2[1] = Math.min(Math.max(arc.minY, event.y - config.margin.top), arc.maxY);
     arc.p3 = arc.p2.slice();
     _drawStrum(brushGroup, state, config, pc, events, arc, 1);
   };
@@ -1353,8 +1384,8 @@ var onDrag = function onDrag(brushGroup, state, config, pc, events) {
 // logically only happen between two axes, so no movement outside these axes
 // should be allowed.
 var onDragStart = function onDragStart(state, config, pc, xscale) {
-  return function () {
-    var p = mouse(state.strumRect.node());
+  return function (event) {
+    var p = pointer(event, state.strumRect.node());
     p[0] = p[0] - config.margin.left;
     p[1] = p[1] - config.margin.top;
     var dims = dimensionsForPoint(config, pc, xscale, p);
@@ -1803,13 +1834,15 @@ var flipAxisAndUpdatePCP = function flipAxisAndUpdatePCP(config, pc, axis) {
 };
 
 var rotateLabels = function rotateLabels(config, pc) {
-  if (!config.rotateLabels) return;
-  var delta = event.deltaY;
-  delta = delta < 0 ? -5 : delta;
-  delta = delta > 0 ? 5 : delta;
-  config.dimensionTitleRotation += delta;
-  pc.svg.selectAll('text.label').attr('transform', 'translate(0,-5) rotate(' + config.dimensionTitleRotation + ')');
-  event.preventDefault();
+  return function (event) {
+    if (!config.rotateLabels) return;
+    var delta = event.deltaY;
+    delta = delta < 0 ? -5 : delta;
+    delta = delta > 0 ? 5 : delta;
+    config.dimensionTitleRotation += delta;
+    pc.svg.selectAll('text.label').attr('transform', 'translate(0,-5) rotate(' + config.dimensionTitleRotation + ')');
+    event.preventDefault();
+  };
 };
 
 var _this$3 = undefined;
@@ -1989,15 +2022,15 @@ var brushable = function brushable(config, pc, flags) {
     g.append('svg:g').attr('class', 'brush').each(function (d) {
       if (config.dimensions[d] !== undefined) {
         config.dimensions[d]['brush'] = brushY(select(this)).extent([[-15, 0], [15, config.dimensions[d].yscale.range()[0]]]);
-        select(this).call(config.dimensions[d]['brush'].on('start', function () {
+        select(this).call(config.dimensions[d]['brush'].on('start', function (event) {
           if (event.sourceEvent !== null && !event.sourceEvent.ctrlKey) {
             pc.brushReset();
           }
-        }).on('brush', function () {
+        }).on('brush', function (event) {
           if (!event.sourceEvent.ctrlKey) {
             pc.brush();
           }
-        }).on('end', function () {
+        }).on('end', function (event) {
           // save brush selection is ctrl key is held
           // store important brush information and
           // the html element of the selection,
@@ -2155,9 +2188,11 @@ var axisDots = function axisDots(config, pc, position) {
     var endAngle = 2 * Math.PI;
     ctx.globalAlpha = min([1 / Math.pow(config.data.length, 1 / 2), 1]);
     config.data.forEach(function (d) {
-      entries(config.dimensions).forEach(function (p, i) {
+      Object.entries(config.dimensions).forEach(function (_ref, i) {
+        var _ref2 = _slicedToArray(_ref, 1),
+          key = _ref2[0];
         ctx.beginPath();
-        ctx.arc(position(p), config.dimensions[p.key].yscale(d[p]), r, startAngle, endAngle);
+        ctx.arc(position(key), config.dimensions[key].yscale(d[key]), r, startAngle, endAngle);
         ctx.stroke();
         ctx.fill();
       });
@@ -2194,9 +2229,9 @@ var reorderable = function reorderable(config, pc, xscale, position, dragging, f
   return function () {
     if (pc.g() === undefined) pc.createAxes();
     var g = pc.g();
-    g.style('cursor', 'move').call(drag().on('start', function (d) {
+    g.style('cursor', 'move').call(drag().on('start', function (event, d) {
       dragging[d] = this.__origin__ = xscale(d);
-    }).on('drag', function (d) {
+    }).on('drag', function (event, d) {
       dragging[d] = Math.min(w(config), Math.max(0, this.__origin__ += event.dx));
       pc.sortDimensions();
       xscale.domain(pc.getOrderedDimensionKeys());
@@ -2204,7 +2239,7 @@ var reorderable = function reorderable(config, pc, xscale, position, dragging, f
       g.attr('transform', function (d) {
         return 'translate(' + position(d) + ')';
       });
-    }).on('end', function (d) {
+    }).on('end', function (event, d) {
       delete this.__origin__;
       delete dragging[d];
       select(this).transition().attr('transform', 'translate(' + xscale(d) + ')');
@@ -3762,17 +3797,20 @@ var initState = function initState(userConfig) {
   var config = Object.assign({}, DefaultConfig, userConfig);
   if (userConfig && userConfig.dimensionTitles) {
     console.warn('dimensionTitles passed in userConfig is deprecated. Add title to dimension object.');
-    entries(userConfig.dimensionTitles).forEach(function (d) {
-      if (config.dimensions[d.key]) {
-        config.dimensions[d.key].title = config.dimensions[d.key].title ? config.dimensions[d.key].title : d.value;
+    Object.entries(userConfig.dimensionTitles).forEach(function (_ref) {
+      var _ref2 = _slicedToArray(_ref, 2),
+        key = _ref2[0],
+        value = _ref2[1];
+      if (config.dimensions[key]) {
+        config.dimensions[key].title = config.dimensions[key].title ? config.dimensions[key].title : value;
       } else {
-        config.dimensions[d.key] = {
-          title: d.value
+        config.dimensions[key] = {
+          title: value
         };
       }
     });
   }
-  var eventTypes = ['render', 'resize', 'highlight', 'mark', 'brush', 'brushend', 'brushstart', 'axesreorder'].concat(keys(config));
+  var eventTypes = ['render', 'resize', 'highlight', 'mark', 'brush', 'brushend', 'brushstart', 'axesreorder'].concat(Object.keys(config));
   var events = dispatch.apply(_this$1, eventTypes),
     flags = {
       brushable: false,

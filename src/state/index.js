@@ -1,4 +1,3 @@
-import { entries, keys } from 'd3-collection';
 import { axisLeft } from 'd3-axis';
 import { dispatch } from 'd3-dispatch';
 import { scalePoint } from 'd3-scale';
@@ -12,14 +11,14 @@ const initState = userConfig => {
     console.warn(
       'dimensionTitles passed in userConfig is deprecated. Add title to dimension object.'
     );
-    entries(userConfig.dimensionTitles).forEach(d => {
-      if (config.dimensions[d.key]) {
-        config.dimensions[d.key].title = config.dimensions[d.key].title
-          ? config.dimensions[d.key].title
-          : d.value;
+    Object.entries(userConfig.dimensionTitles).forEach(([key, value]) => {
+      if (config.dimensions[key]) {
+        config.dimensions[key].title = config.dimensions[key].title
+          ? config.dimensions[key].title
+          : value;
       } else {
-        config.dimensions[d.key] = {
-          title: d.value,
+        config.dimensions[key] = {
+          title: value,
         };
       }
     });
@@ -34,7 +33,7 @@ const initState = userConfig => {
     'brushend',
     'brushstart',
     'axesreorder',
-  ].concat(keys(config));
+  ].concat(Object.keys(config));
 
   const events = dispatch.apply(this, eventTypes),
     flags = {

@@ -1,5 +1,5 @@
 import { drag } from 'd3-drag';
-import { event, select } from 'd3-selection';
+import { select } from 'd3-selection';
 
 import w from '../util/width';
 
@@ -11,10 +11,10 @@ const reorderable = (config, pc, xscale, position, dragging, flags) =>
 
     g.style('cursor', 'move').call(
       drag()
-        .on('start', function(d) {
+        .on('start', function(event, d) {
           dragging[d] = this.__origin__ = xscale(d);
         })
-        .on('drag', function(d) {
+        .on('drag', function(event, d) {
           dragging[d] = Math.min(
             w(config),
             Math.max(0, (this.__origin__ += event.dx))
@@ -24,7 +24,7 @@ const reorderable = (config, pc, xscale, position, dragging, flags) =>
           pc.render();
           g.attr('transform', d => 'translate(' + position(d) + ')');
         })
-        .on('end', function(d) {
+        .on('end', function(event, d) {
           delete this.__origin__;
           delete dragging[d];
           select(this)
