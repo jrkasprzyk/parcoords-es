@@ -1,0 +1,4 @@
+recursive: true
+require:
+  - ./test/testHelper.js
+  - ./test/css-null-compiler.js

@@ -3,77 +3,68 @@ import { select, event, mouse, selectAll } from 'd3-selection';
 import { brushSelection, brushY } from 'd3-brush';
 import { drag } from 'd3-drag';
 import { arc } from 'd3-shape';
-import { scaleLinear, scaleOrdinal, scalePoint, scaleTime } from 'd3-scale';
+import { scaleOrdinal, scalePoint, scaleLinear, scaleTime } from 'd3-scale';
 import { extent, min, ascending } from 'd3-array';
 import { entries, keys } from 'd3-collection';
-import { axisBottom, axisLeft, axisRight, axisTop } from 'd3-axis';
+import { axisLeft, axisBottom, axisTop, axisRight } from 'd3-axis';
 import { dispatch } from 'd3-dispatch';
 
 var renderQueue = function renderQueue(func) {
   var _queue = [],
-      // data to be rendered
-  _rate = 1000,
-      // number of calls per frame
-  _invalidate = function _invalidate() {},
-      // invalidate last render queue
-  _clear = function _clear() {}; // clearing function
+    // data to be rendered
+    _rate = 1000,
+    // number of calls per frame
+    _invalidate = function _invalidate() {},
+    // invalidate last render queue
+    _clear = function _clear() {}; // clearing function
 
-  var rq = function rq(data) {
-    if (data) rq.data(data);
+  var _rq = function rq(data) {
+    if (data) _rq.data(data);
     _invalidate();
     _clear();
-    rq.render();
+    _rq.render();
   };
-
-  rq.render = function () {
+  _rq.render = function () {
     var valid = true;
-    _invalidate = rq.invalidate = function () {
+    _invalidate = _rq.invalidate = function () {
       valid = false;
     };
-
     function doFrame() {
       if (!valid) return true;
       var chunk = _queue.splice(0, _rate);
       chunk.map(func);
       requestAnimationFrame(doFrame);
     }
-
     doFrame();
   };
-
-  rq.data = function (data) {
+  _rq.data = function (data) {
     _invalidate();
     _queue = data.slice(0); // creates a copy of the data
-    return rq;
+    return _rq;
   };
-
-  rq.add = function (data) {
+  _rq.add = function (data) {
     _queue = _queue.concat(data);
   };
-
-  rq.rate = function (value) {
+  _rq.rate = function (value) {
     if (!arguments.length) return _rate;
     _rate = value;
-    return rq;
+    return _rq;
   };
-
-  rq.remaining = function () {
+  _rq.remaining = function () {
     return _queue.length;
   };
 
   // clear the canvas
-  rq.clear = function (func) {
+  _rq.clear = function (func) {
     if (!arguments.length) {
       _clear();
-      return rq;
+      return _rq;
     }
     _clear = func;
-    return rq;
+    return _rq;
   };
-
-  rq.invalidate = _invalidate;
-
-  return rq;
+  _rq.invalidate = _invalidate;
+  return _rq;
 };
 
 var w = function w(config) {
@@ -94,7 +85,6 @@ var invertCategorical = function invertCategorical(selection, scale) {
   });
   return found;
 };
-
 var invertByScale = function invertByScale(selection, scale) {
   if (scale === null) return [];
   return typeof scale.invert === 'undefined' ? invertCategorical(selection, scale) : selection.map(function (d) {
@@ -102,12 +92,10 @@ var invertByScale = function invertByScale(selection, scale) {
   });
 };
 
-var brushExtents = function brushExtents(state, config, pc) {
+var brushExtents$1 = function brushExtents(state, config, pc) {
   return function (extents) {
     var brushes = state.brushes,
-        brushNodes = state.brushNodes;
-
-
+      brushNodes = state.brushNodes;
     if (typeof extents === 'undefined') {
       return Object.keys(config.dimensions).reduce(function (acc, cur) {
         var brush = brushes[cur];
@@ -116,7 +104,6 @@ var brushExtents = function brushExtents(state, config, pc) {
           var raw = brushSelection(brushNodes[cur]);
           var yScale = config.dimensions[cur].yscale;
           var scaled = invertByScale(raw, yScale);
-
           acc[cur] = {
             extent: brush.extent(),
             selection: {
@@ -125,7 +112,6 @@ var brushExtents = function brushExtents(state, config, pc) {
             }
           };
         }
-
         return acc;
       }, {});
     } else {
@@ -140,7 +126,6 @@ var brushExtents = function brushExtents(state, config, pc) {
         if (extents[d] === undefined) {
           return;
         }
-
         var brush = brushes[d];
         if (brush !== undefined) {
           var dim = config.dimensions[d];
@@ -165,19 +150,15 @@ var brushExtents = function brushExtents(state, config, pc) {
 
       //redraw the chart
       pc.renderBrushed();
-
       return pc;
     }
   };
 };
 
-var _this = undefined;
-
-var brushReset = function brushReset(state, config, pc) {
+var _this$5 = undefined;
+var brushReset$4 = function brushReset(state, config, pc) {
   return function (dimension) {
     var brushes = state.brushes;
-
-
     if (dimension === undefined) {
       config.brushed = false;
       if (pc.g() !== undefined && pc.g() !== null) {
@@ -201,25 +182,22 @@ var brushReset = function brushReset(state, config, pc) {
         pc.renderBrushed();
       }
     }
-    return _this;
+    return _this$5;
   };
 };
 
 //https://github.com/d3/d3-brush/issues/10
 
 // data within extents
-var selected = function selected(state, config, brushGroup) {
+var selected$4 = function selected(state, config, brushGroup) {
   return function () {
     var brushNodes = state.brushNodes;
-
     var is_brushed = function is_brushed(p) {
       return brushNodes[p] && brushSelection(brushNodes[p]) !== null;
     };
-
     var actives = Object.keys(config.dimensions).filter(is_brushed);
     var extents = actives.map(function (p) {
       var _brushRange = brushSelection(brushNodes[p]);
-
       if (typeof config.dimensions[p].yscale.invert === 'function') {
         return [config.dimensions[p].yscale.invert(_brushRange[1]), config.dimensions[p].yscale.invert(_brushRange[0])];
       } else {
@@ -256,7 +234,6 @@ var selected = function selected(state, config, brushGroup) {
         return extents[dimension][0] <= config.dimensions[p].yscale(d[p]) && config.dimensions[p].yscale(d[p]) <= extents[dimension][1];
       }
     };
-
     return config.data.filter(function (d) {
       switch (brushGroup.predicate) {
         case 'AND':
@@ -274,29 +251,24 @@ var selected = function selected(state, config, brushGroup) {
   };
 };
 
-var brushUpdated = function brushUpdated(config, pc, events, args) {
+var brushUpdated$1 = function brushUpdated(config, pc, events, args) {
   return function (newSelection) {
     config.brushed = newSelection;
     events.call('brush', pc, config.brushed, args);
     pc.renderBrushed();
   };
 };
-
-var brushFor = function brushFor(state, config, pc, events, brushGroup) {
+var brushFor$1 = function brushFor(state, config, pc, events, brushGroup) {
   return function (axis, _selector) {
     // handle hidden axes which will not be a property of dimensions
     if (!config.dimensions.hasOwnProperty(axis)) {
       return function () {};
     }
-
     var brushRangeMax = config.dimensions[axis].type === 'string' ? config.dimensions[axis].yscale.range()[config.dimensions[axis].yscale.range().length - 1] : config.dimensions[axis].yscale.range()[0];
-
     var _brush = brushY(_selector).extent([[-15, 0], [15, brushRangeMax]]);
-
     var convertBrushArguments = function convertBrushArguments(args) {
       var args_array = Array.prototype.slice.call(args);
       var axis = args_array[0];
-
       var raw = brushSelection(args_array[2][0]) || [];
 
       // handle hidden axes which will not have a yscale
@@ -307,7 +279,6 @@ var brushFor = function brushFor(state, config, pc, events, brushGroup) {
 
       // ordinal scales do not have invert
       var scaled = invertByScale(raw, yscale);
-
       return {
         axis: args_array[0],
         node: args_array[2][0],
@@ -317,7 +288,6 @@ var brushFor = function brushFor(state, config, pc, events, brushGroup) {
         }
       };
     };
-
     _brush.on('start', function () {
       if (event.sourceEvent !== null) {
         events.call('brushstart', pc, config.brushed, convertBrushArguments(arguments));
@@ -326,20 +296,18 @@ var brushFor = function brushFor(state, config, pc, events, brushGroup) {
         }
       }
     }).on('brush', function () {
-      brushUpdated(config, pc, events, convertBrushArguments(arguments))(selected(state, config, brushGroup)());
+      brushUpdated$1(config, pc, events, convertBrushArguments(arguments))(selected$4(state, config, brushGroup)());
     }).on('end', function () {
-      brushUpdated(config, pc, events)(selected(state, config, brushGroup)());
+      brushUpdated$1(config, pc, events)(selected$4(state, config, brushGroup)());
       events.call('brushend', pc, config.brushed, convertBrushArguments(arguments));
     });
-
     state.brushes[axis] = _brush;
     state.brushNodes[axis] = _selector.node();
-
     return _brush;
   };
 };
 
-var install = function install(state, config, pc, events, brushGroup) {
+var install$3 = function install(state, config, pc, events, brushGroup) {
   return function () {
     if (!pc.g()) {
       pc.createAxes();
@@ -347,26 +315,21 @@ var install = function install(state, config, pc, events, brushGroup) {
 
     // Add and store a brush for each axis.
     var brush = pc.g().append('svg:g').attr('class', 'brush').each(function (d) {
-      select(this).call(brushFor(state, config, pc, events, brushGroup)(d, select(this)));
+      select(this).call(brushFor$1(state, config, pc, events, brushGroup)(d, select(this)));
     });
     brush.selectAll('rect').style('visibility', null).attr('x', -15).attr('width', 30);
-
     brush.selectAll('rect.background').style('fill', 'transparent');
-
     brush.selectAll('rect.extent').style('fill', 'rgba(255,255,255,0.25)').style('stroke', 'rgba(0,0,0,0.6)');
-
     brush.selectAll('.resize rect').style('fill', 'rgba(0,0,0,0.1)');
-
-    pc.brushExtents = brushExtents(state, config, pc);
-    pc.brushReset = brushReset(state, config, pc);
+    pc.brushExtents = brushExtents$1(state, config, pc);
+    pc.brushReset = brushReset$4(state, config, pc);
     return pc;
   };
 };
 
-var uninstall = function uninstall(state, pc) {
+var uninstall$3 = function uninstall(state, pc) {
   return function () {
     if (pc.g() !== undefined && pc.g() !== null) pc.g().selectAll('.brush').remove();
-
     state.brushes = {};
     delete pc.brushExtents;
     delete pc.brushReset;
@@ -378,27 +341,24 @@ var install1DAxes = function install1DAxes(brushGroup, config, pc, events) {
     brushes: {},
     brushNodes: {}
   };
-
   brushGroup.modes['1D-axes'] = {
-    install: install(state, config, pc, events, brushGroup),
-    uninstall: uninstall(state, pc),
-    selected: selected(state, config, brushGroup),
-    brushState: brushExtents(state, config, pc)
+    install: install$3(state, config, pc, events, brushGroup),
+    uninstall: uninstall$3(state, pc),
+    selected: selected$4(state, config, brushGroup),
+    brushState: brushExtents$1(state, config, pc)
   };
 };
 
 var drawBrushes = function drawBrushes(brushes, config, pc, axis, selector) {
-  var brushSelection$$1 = selector.selectAll('.brush').data(brushes, function (d) {
+  var brushSelection = selector.selectAll('.brush').data(brushes, function (d) {
     return d.id;
   });
-
-  brushSelection$$1.enter().insert('g', '.brush').attr('class', 'brush').attr('dimension', axis).attr('id', function (b) {
+  brushSelection.enter().insert('g', '.brush').attr('class', 'brush').attr('dimension', axis).attr('id', function (b) {
     return 'brush-' + Object.keys(config.dimensions).indexOf(axis) + '-' + b.id;
   }).each(function (brushObject) {
     brushObject.brush(select(this));
   });
-
-  brushSelection$$1.each(function (brushObject) {
+  brushSelection.each(function (brushObject) {
     select(this).attr('class', 'brush').selectAll('.overlay').style('pointer-events', function () {
       var brush = brushObject.brush;
       if (brushObject.id === brushes.length - 1 && brush !== undefined) {
@@ -408,33 +368,129 @@ var drawBrushes = function drawBrushes(brushes, config, pc, axis, selector) {
       }
     });
   });
-
-  brushSelection$$1.exit().remove();
+  brushSelection.exit().remove();
 };
 
+function _arrayLikeToArray(r, a) {
+  (null == a || a > r.length) && (a = r.length);
+  for (var e = 0, n = Array(a); e < a; e++) n[e] = r[e];
+  return n;
+}
+function _createForOfIteratorHelper(r, e) {
+  var t = "undefined" != typeof Symbol && r[Symbol.iterator] || r["@@iterator"];
+  if (!t) {
+    if (Array.isArray(r) || (t = _unsupportedIterableToArray(r)) || e) {
+      t && (r = t);
+      var n = 0,
+        F = function () {};
+      return {
+        s: F,
+        n: function () {
+          return n >= r.length ? {
+            done: true
+          } : {
+            done: false,
+            value: r[n++]
+          };
+        },
+        e: function (r) {
+          throw r;
+        },
+        f: F
+      };
+    }
+    throw new TypeError("Invalid attempt to iterate non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method.");
+  }
+  var o,
+    a = true,
+    u = false;
+  return {
+    s: function () {
+      t = t.call(r);
+    },
+    n: function () {
+      var r = t.next();
+      return a = r.done, r;
+    },
+    e: function (r) {
+      u = true, o = r;
+    },
+    f: function () {
+      try {
+        a || null == t.return || t.return();
+      } finally {
+        if (u) throw o;
+      }
+    }
+  };
+}
+function _defineProperty(e, r, t) {
+  return (r = _toPropertyKey(r)) in e ? Object.defineProperty(e, r, {
+    value: t,
+    enumerable: true,
+    configurable: true,
+    writable: true
+  }) : e[r] = t, e;
+}
+function ownKeys(e, r) {
+  var t = Object.keys(e);
+  if (Object.getOwnPropertySymbols) {
+    var o = Object.getOwnPropertySymbols(e);
+    r && (o = o.filter(function (r) {
+      return Object.getOwnPropertyDescriptor(e, r).enumerable;
+    })), t.push.apply(t, o);
+  }
+  return t;
+}
+function _objectSpread2(e) {
+  for (var r = 1; r < arguments.length; r++) {
+    var t = null != arguments[r] ? arguments[r] : {};
+    r % 2 ? ownKeys(Object(t), true).forEach(function (r) {
+      _defineProperty(e, r, t[r]);
+    }) : Object.getOwnPropertyDescriptors ? Object.defineProperties(e, Object.getOwnPropertyDescriptors(t)) : ownKeys(Object(t)).forEach(function (r) {
+      Object.defineProperty(e, r, Object.getOwnPropertyDescriptor(t, r));
+    });
+  }
+  return e;
+}
+function _toPrimitive(t, r) {
+  if ("object" != typeof t || !t) return t;
+  var e = t[Symbol.toPrimitive];
+  if (void 0 !== e) {
+    var i = e.call(t, r);
+    if ("object" != typeof i) return i;
+    throw new TypeError("@@toPrimitive must return a primitive value.");
+  }
+  return ("string" === r ? String : Number)(t);
+}
+function _toPropertyKey(t) {
+  var i = _toPrimitive(t, "string");
+  return "symbol" == typeof i ? i : i + "";
+}
+function _unsupportedIterableToArray(r, a) {
+  if (r) {
+    if ("string" == typeof r) return _arrayLikeToArray(r, a);
+    var t = {}.toString.call(r).slice(8, -1);
+    return "Object" === t && r.constructor && (t = r.constructor.name), "Map" === t || "Set" === t ? Array.from(r) : "Arguments" === t || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(t) ? _arrayLikeToArray(r, a) : void 0;
+  }
+}
+
 // data within extents
-var selected$1 = function selected(state, config, pc, events, brushGroup) {
+var selected$3 = function selected(state, config, pc, events, brushGroup) {
   var brushes = state.brushes;
-
-
   var is_brushed = function is_brushed(p, pos) {
     var axisBrushes = brushes[p];
-
     for (var i = 0; i < axisBrushes.length; i++) {
       var brush = document.getElementById('brush-' + pos + '-' + i);
-
       if (brush && brushSelection(brush) !== null) {
         return true;
       }
     }
-
     return false;
   };
-
   var actives = Object.keys(config.dimensions).filter(is_brushed);
   var extents = actives.map(function (p) {
     var axisBrushes = brushes[p];
-
     return axisBrushes.filter(function (d) {
       return !pc.hideAxis().includes(d);
     }).map(function (d, i) {
@@ -462,186 +518,112 @@ var selected$1 = function selected(state, config, pc, events, brushGroup) {
   var within = {
     date: function date(d, p, i) {
       var dimExt = extents[i];
-
       if (typeof config.dimensions[p].yscale.bandwidth === 'function') {
         // if it is ordinal
-        var _iteratorNormalCompletion = true;
-        var _didIteratorError = false;
-        var _iteratorError = undefined;
-
+        var _iterator = _createForOfIteratorHelper(dimExt),
+          _step;
         try {
-          for (var _iterator = dimExt[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
+          for (_iterator.s(); !(_step = _iterator.n()).done;) {
             var e = _step.value;
-
             if (e === null || e === undefined) {
               continue;
             }
-
             if (e[0] <= config.dimensions[p].yscale(d[p]) && config.dimensions[p].yscale(d[p]) <= e[1]) {
               return true;
             }
           }
         } catch (err) {
-          _didIteratorError = true;
-          _iteratorError = err;
+          _iterator.e(err);
         } finally {
-          try {
-            if (!_iteratorNormalCompletion && _iterator.return) {
-              _iterator.return();
-            }
-          } finally {
-            if (_didIteratorError) {
-              throw _iteratorError;
-            }
-          }
+          _iterator.f();
         }
-
         return false;
       } else {
-        var _iteratorNormalCompletion2 = true;
-        var _didIteratorError2 = false;
-        var _iteratorError2 = undefined;
-
+        var _iterator2 = _createForOfIteratorHelper(dimExt),
+          _step2;
         try {
-          for (var _iterator2 = dimExt[Symbol.iterator](), _step2; !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {
+          for (_iterator2.s(); !(_step2 = _iterator2.n()).done;) {
             var _e = _step2.value;
-
             if (_e === null || _e === undefined) {
               continue;
             }
-
             if (_e[0] <= d[p] && d[p] <= _e[1]) {
               return true;
             }
           }
         } catch (err) {
-          _didIteratorError2 = true;
-          _iteratorError2 = err;
+          _iterator2.e(err);
         } finally {
-          try {
-            if (!_iteratorNormalCompletion2 && _iterator2.return) {
-              _iterator2.return();
-            }
-          } finally {
-            if (_didIteratorError2) {
-              throw _iteratorError2;
-            }
-          }
+          _iterator2.f();
         }
-
         return false;
       }
     },
     number: function number(d, p, i) {
       var dimExt = extents[i];
-
       if (typeof config.dimensions[p].yscale.bandwidth === 'function') {
         // if it is ordinal
-        var _iteratorNormalCompletion3 = true;
-        var _didIteratorError3 = false;
-        var _iteratorError3 = undefined;
-
+        var _iterator3 = _createForOfIteratorHelper(dimExt),
+          _step3;
         try {
-          for (var _iterator3 = dimExt[Symbol.iterator](), _step3; !(_iteratorNormalCompletion3 = (_step3 = _iterator3.next()).done); _iteratorNormalCompletion3 = true) {
+          for (_iterator3.s(); !(_step3 = _iterator3.n()).done;) {
             var e = _step3.value;
-
             if (e === null || e === undefined) {
               continue;
             }
-
             if (e[0] <= config.dimensions[p].yscale(d[p]) && config.dimensions[p].yscale(d[p]) <= e[1]) {
               return true;
             }
           }
         } catch (err) {
-          _didIteratorError3 = true;
-          _iteratorError3 = err;
+          _iterator3.e(err);
         } finally {
-          try {
-            if (!_iteratorNormalCompletion3 && _iterator3.return) {
-              _iterator3.return();
-            }
-          } finally {
-            if (_didIteratorError3) {
-              throw _iteratorError3;
-            }
-          }
+          _iterator3.f();
         }
-
         return false;
       } else {
-        var _iteratorNormalCompletion4 = true;
-        var _didIteratorError4 = false;
-        var _iteratorError4 = undefined;
-
+        var _iterator4 = _createForOfIteratorHelper(dimExt),
+          _step4;
         try {
-          for (var _iterator4 = dimExt[Symbol.iterator](), _step4; !(_iteratorNormalCompletion4 = (_step4 = _iterator4.next()).done); _iteratorNormalCompletion4 = true) {
+          for (_iterator4.s(); !(_step4 = _iterator4.n()).done;) {
             var _e2 = _step4.value;
-
             if (_e2 === null || _e2 === undefined) {
               continue;
             }
-
             if (_e2[0] <= d[p] && d[p] <= _e2[1]) {
               return true;
             }
           }
         } catch (err) {
-          _didIteratorError4 = true;
-          _iteratorError4 = err;
+          _iterator4.e(err);
         } finally {
-          try {
-            if (!_iteratorNormalCompletion4 && _iterator4.return) {
-              _iterator4.return();
-            }
-          } finally {
-            if (_didIteratorError4) {
-              throw _iteratorError4;
-            }
-          }
+          _iterator4.f();
         }
-
         return false;
       }
     },
     string: function string(d, p, i) {
       var dimExt = extents[i];
-
-      var _iteratorNormalCompletion5 = true;
-      var _didIteratorError5 = false;
-      var _iteratorError5 = undefined;
-
+      var _iterator5 = _createForOfIteratorHelper(dimExt),
+        _step5;
       try {
-        for (var _iterator5 = dimExt[Symbol.iterator](), _step5; !(_iteratorNormalCompletion5 = (_step5 = _iterator5.next()).done); _iteratorNormalCompletion5 = true) {
+        for (_iterator5.s(); !(_step5 = _iterator5.n()).done;) {
           var e = _step5.value;
-
           if (e === null || e === undefined) {
             continue;
           }
-
           if (e[0] <= config.dimensions[p].yscale(d[p]) && config.dimensions[p].yscale(d[p]) <= e[1]) {
             return true;
           }
         }
       } catch (err) {
-        _didIteratorError5 = true;
-        _iteratorError5 = err;
+        _iterator5.e(err);
       } finally {
-        try {
-          if (!_iteratorNormalCompletion5 && _iterator5.return) {
-            _iterator5.return();
-          }
-        } finally {
-          if (_didIteratorError5) {
-            throw _iteratorError5;
-          }
-        }
+        _iterator5.f();
       }
-
       return false;
     }
   };
-
   return config.data.filter(function (d) {
     switch (brushGroup.predicate) {
       case 'AND':
@@ -658,26 +640,21 @@ var selected$1 = function selected(state, config, pc, events, brushGroup) {
   });
 };
 
-var brushUpdated$1 = function brushUpdated(config, pc, events) {
+var brushUpdated = function brushUpdated(config, pc, events) {
   return function (newSelection) {
     config.brushed = newSelection;
     events.call('brush', pc, config.brushed);
     pc.renderBrushed();
   };
 };
-
-var newBrush = function newBrush(state, config, pc, events, brushGroup) {
+var _newBrush = function newBrush(state, config, pc, events, brushGroup) {
   return function (axis, _selector) {
     var brushes = state.brushes,
-        brushNodes = state.brushNodes;
-
-
+      brushNodes = state.brushNodes;
     var brushRangeMax = config.dimensions[axis].type === 'string' ? config.dimensions[axis].yscale.range()[config.dimensions[axis].yscale.range().length - 1] : config.dimensions[axis].yscale.range()[0];
-
     var brush = brushY().extent([[-15, 0], [15, brushRangeMax]]);
     var id = brushes[axis] ? brushes[axis].length : 0;
     var node = 'brush-' + Object.keys(config.dimensions).indexOf(axis) + '-' + id;
-
     if (brushes[axis]) {
       brushes[axis].push({
         id: id,
@@ -685,15 +662,23 @@ var newBrush = function newBrush(state, config, pc, events, brushGroup) {
         node: node
       });
     } else {
-      brushes[axis] = [{ id: id, brush: brush, node: node }];
+      brushes[axis] = [{
+        id: id,
+        brush: brush,
+        node: node
+      }];
     }
-
     if (brushNodes[axis]) {
-      brushNodes[axis].push({ id: id, node: node });
+      brushNodes[axis].push({
+        id: id,
+        node: node
+      });
     } else {
-      brushNodes[axis] = [{ id: id, node: node }];
+      brushNodes[axis] = [{
+        id: id,
+        node: node
+      }];
     }
-
     brush.on('start', function () {
       if (event.sourceEvent !== null) {
         events.call('brushstart', pc, config.brushed);
@@ -703,28 +688,23 @@ var newBrush = function newBrush(state, config, pc, events, brushGroup) {
       }
     }).on('brush', function (e) {
       // record selections
-      brushUpdated$1(config, pc, events)(selected$1(state, config, pc, events, brushGroup));
+      brushUpdated(config, pc, events)(selected$3(state, config, pc, events, brushGroup));
     }).on('end', function () {
       // Figure out if our latest brush has a selection
       var lastBrushID = brushes[axis][brushes[axis].length - 1].id;
       var lastBrush = document.getElementById('brush-' + Object.keys(config.dimensions).indexOf(axis) + '-' + lastBrushID);
       var selection = brushSelection(lastBrush);
-
       if (selection !== undefined && selection !== null && selection[0] !== selection[1]) {
-        newBrush(state, config, pc, events, brushGroup)(axis, _selector);
-
+        _newBrush(state, config, pc, events, brushGroup)(axis, _selector);
         drawBrushes(brushes[axis], config, pc, axis, _selector);
-
-        brushUpdated$1(config, pc, events)(selected$1(state, config, pc, events, brushGroup));
+        brushUpdated(config, pc, events)(selected$3(state, config, pc, events, brushGroup));
       } else {
         if (event.sourceEvent && event.sourceEvent.toString() === '[object MouseEvent]' && event.selection === null) {
           pc.brushReset(axis);
         }
       }
-
       events.call('brushend', pc, config.brushed);
     });
-
     return brush;
   };
 };
@@ -738,28 +718,23 @@ var newBrush = function newBrush(state, config, pc, events, brushGroup) {
  * @param pc
  * @returns {Function}
  */
-var brushExtents$1 = function brushExtents(state, config, pc, events, brushGroup) {
+var brushExtents = function brushExtents(state, config, pc, events, brushGroup) {
   return function (extents) {
     var brushes = state.brushes;
-
     var hiddenAxes = pc.hideAxis();
-
     if (typeof extents === 'undefined') {
       return Object.keys(config.dimensions).filter(function (d) {
         return !hiddenAxes.includes(d);
       }).reduce(function (acc, cur, pos) {
         var axisBrushes = brushes[cur];
-
         if (axisBrushes === undefined || axisBrushes === null) {
           acc[cur] = [];
         } else {
           acc[cur] = axisBrushes.reduce(function (d, p, i) {
             var raw = brushSelection(document.getElementById('brush-' + pos + '-' + i));
-
             if (raw) {
               var yScale = config.dimensions[cur].yscale;
               var scaled = invertByScale(raw, yScale);
-
               d.push({
                 extent: p.brush.extent(),
                 selection: {
@@ -771,7 +746,6 @@ var brushExtents$1 = function brushExtents(state, config, pc, events, brushGroup
             return d;
           }, []);
         }
-
         return acc;
       }, {});
     } else {
@@ -781,28 +755,22 @@ var brushExtents$1 = function brushExtents(state, config, pc, events, brushGroup
         if (extents[d] === undefined || extents[d] === null) {
           return;
         }
-
         var dim = config.dimensions[d];
-
         var yExtents = extents[d].map(function (e) {
           return e.map(dim.yscale);
         });
-
         var _bs = yExtents.map(function (e, j) {
-          var _brush = newBrush(state, config, pc, events, brushGroup)(d, select('#brush-group-' + pos));
+          var _brush = _newBrush(state, config, pc, events, brushGroup)(d, select('#brush-group-' + pos));
           //update the extent
           //sets the brushable extent to the specified array of points [[x0, y0], [x1, y1]]
           _brush.extent([[-15, e[1]], [15, e[0]]]);
-
           return {
             id: j,
             brush: _brush,
             ext: e
           };
         });
-
         brushes[d] = _bs;
-
         drawBrushes(_bs, config, pc, d, select('#brush-group-' + pos));
 
         //redraw the brush
@@ -815,19 +783,15 @@ var brushExtents$1 = function brushExtents(state, config, pc, events, brushGroup
 
       //redraw the chart
       pc.renderBrushed();
-
       return pc;
     }
   };
 };
 
-var _this$1 = undefined;
-
-var brushReset$1 = function brushReset(state, config, pc) {
+var _this$4 = undefined;
+var brushReset$3 = function brushReset(state, config, pc) {
   return function (dimension) {
     var brushes = state.brushes;
-
-
     if (dimension === undefined) {
       if (pc.g() !== undefined && pc.g() !== null) {
         Object.keys(config.dimensions).forEach(function (d, pos) {
@@ -843,71 +807,62 @@ var brushReset$1 = function brushReset(state, config, pc) {
             });
           }
         });
-
         pc.renderBrushed();
       }
     } else {
       if (pc.g() !== undefined && pc.g() !== null) {
         var axisBrush = brushes[dimension];
         var pos = Object.keys(config.dimensions).indexOf(dimension);
-
         if (axisBrush) {
           axisBrush.forEach(function (e, i) {
             var brush = document.getElementById('brush-' + pos + '-' + i);
             if (brushSelection(brush) !== null) {
               pc.g().select('#brush-' + pos + '-' + i).call(e.brush.move, null);
-
               if (typeof e.event === 'function') {
                 e.event(select('#brush-' + pos + '-' + i));
               }
             }
           });
         }
-
         pc.renderBrushed();
       }
     }
-    return _this$1;
+    return _this$4;
   };
 };
 
-var brushFor$1 = function brushFor(state, config, pc, events, brushGroup) {
+var brushFor = function brushFor(state, config, pc, events, brushGroup) {
   return function (axis, _selector) {
     var brushes = state.brushes;
-
-    newBrush(state, config, pc, events, brushGroup)(axis, _selector);
+    _newBrush(state, config, pc, events, brushGroup)(axis, _selector);
     drawBrushes(brushes[axis], config, pc, axis, _selector);
   };
 };
 
-var install$1 = function install(state, config, pc, events, brushGroup) {
+var install$2 = function install(state, config, pc, events, brushGroup) {
   return function () {
     if (!pc.g()) {
       pc.createAxes();
     }
-
     var hiddenAxes = pc.hideAxis();
-
     pc.g().append('svg:g').attr('id', function (d, i) {
       return 'brush-group-' + i;
     }).attr('class', 'brush-group').attr('dimension', function (d) {
       return d;
     }).each(function (d) {
       if (!hiddenAxes.includes(d)) {
-        brushFor$1(state, config, pc, events, brushGroup)(d, select(this));
+        brushFor(state, config, pc, events, brushGroup)(d, select(this));
       }
     });
-
-    pc.brushExtents = brushExtents$1(state, config, pc, events, brushGroup);
-    pc.brushReset = brushReset$1(state, config, pc);
+    pc.brushExtents = brushExtents(state, config, pc, events, brushGroup);
+    pc.brushReset = brushReset$3(state, config, pc);
     return pc;
   };
 };
 
-var uninstall$1 = function uninstall(state, pc) {
+var uninstall$2 = function uninstall(state, pc) {
   return function () {
     if (pc.g() !== undefined && pc.g() !== null) pc.g().selectAll('.brush-group').remove();
-
     state.brushes = {};
     delete pc.brushExtents;
     delete pc.brushReset;
@@ -919,71 +874,62 @@ var install1DMultiAxes = function install1DMultiAxes(brushGroup, config, pc, eve
     brushes: {},
     brushNodes: {}
   };
-
   brushGroup.modes['1D-axes-multi'] = {
-    install: install$1(state, config, pc, events, brushGroup),
-    uninstall: uninstall$1(state, pc),
-    selected: selected$1(state, config, brushGroup),
-    brushState: brushExtents$1(state, config, pc)
+    install: install$2(state, config, pc, events, brushGroup),
+    uninstall: uninstall$2(state, pc),
+    selected: selected$3(state, config, brushGroup),
+    brushState: brushExtents(state, config, pc)
   };
 };
 
-var uninstall$2 = function uninstall(state, pc) {
+var uninstall$1 = function uninstall(state, pc) {
   return function () {
     pc.selection.select('svg').select('g#strums').remove();
     pc.selection.select('svg').select('rect#strum-events').remove();
     pc.on('axesreorder.strums', undefined);
     delete pc.brushReset;
-
     state.strumRect = undefined;
   };
 };
 
 // test if point falls between lines
-var containmentTest = function containmentTest(strum, width) {
+var containmentTest$1 = function containmentTest(strum, width) {
   return function (p) {
     var p1 = [strum.p1[0] - strum.minX, strum.p1[1] - strum.minX],
-        p2 = [strum.p2[0] - strum.minX, strum.p2[1] - strum.minX],
-        m1 = 1 - width / p1[0],
-        b1 = p1[1] * (1 - m1),
-        m2 = 1 - width / p2[0],
-        b2 = p2[1] * (1 - m2);
-
+      p2 = [strum.p2[0] - strum.minX, strum.p2[1] - strum.minX],
+      m1 = 1 - width / p1[0],
+      b1 = p1[1] * (1 - m1),
+      m2 = 1 - width / p2[0],
+      b2 = p2[1] * (1 - m2);
     var x = p[0],
-        y = p[1],
-        y1 = m1 * x + b1,
-        y2 = m2 * x + b2;
-
+      y = p[1],
+      y1 = m1 * x + b1,
+      y2 = m2 * x + b2;
     return y > Math.min(y1, y2) && y < Math.max(y1, y2);
   };
 };
-
-var crossesStrum = function crossesStrum(state, config) {
+var crossesStrum$1 = function crossesStrum(state, config) {
   return function (d, id) {
     var strum = state.strums[id],
-        test = containmentTest(strum, state.strums.width(id)),
-        d1 = strum.dims.left,
-        d2 = strum.dims.right,
-        y1 = config.dimensions[d1].yscale,
-        y2 = config.dimensions[d2].yscale,
-        point = [y1(d[d1]) - strum.minX, y2(d[d2]) - strum.minX];
+      test = containmentTest$1(strum, state.strums.width(id)),
+      d1 = strum.dims.left,
+      d2 = strum.dims.right,
+      y1 = config.dimensions[d1].yscale,
+      y2 = config.dimensions[d2].yscale,
+      point = [y1(d[d1]) - strum.minX, y2(d[d2]) - strum.minX];
     return test(point);
   };
 };
-
 var selected$2 = function selected(brushGroup, state, config) {
   // Get the ids of the currently active strums.
   var ids = Object.getOwnPropertyNames(state.strums).filter(function (d) {
-    return !isNaN(d);
-  }),
-      brushed = config.data;
-
+      return !isNaN(d);
+    }),
+    brushed = config.data;
   if (ids.length === 0) {
     return brushed;
   }
-
-  var crossTest = crossesStrum(state, config);
-
+  var crossTest = crossesStrum$1(state, config);
   return brushed.filter(function (d) {
     switch (brushGroup.predicate) {
       case 'AND':
@@ -1000,25 +946,23 @@ var selected$2 = function selected(brushGroup, state, config) {
   });
 };
 
-var removeStrum = function removeStrum(state, pc) {
+var removeStrum$1 = function removeStrum(state, pc) {
   var strum = state.strums[state.strums.active],
-      svg = pc.selection.select('svg').select('g#strums');
-
+    svg = pc.selection.select('svg').select('g#strums');
   delete state.strums[state.strums.active];
   svg.selectAll('line#strum-' + strum.dims.i).remove();
   svg.selectAll('circle#strum-' + strum.dims.i).remove();
 };
 
-var onDragEnd = function onDragEnd(brushGroup, state, config, pc, events) {
+var onDragEnd$1 = function onDragEnd(brushGroup, state, config, pc, events) {
   return function () {
     var strum = state.strums[state.strums.active];
 
     // Okay, somewhat unexpected, but not totally unsurprising, a mousclick is
     // considered a drag without move. So we have to deal with that case
     if (strum && strum.p1[0] === strum.p2[0] && strum.p1[1] === strum.p2[1]) {
-      removeStrum(state, pc);
+      removeStrum$1(state, pc);
     }
-
     var brushed = selected$2(brushGroup, state, config);
     state.strums.active = undefined;
     config.brushed = brushed;
@@ -1027,16 +971,14 @@ var onDragEnd = function onDragEnd(brushGroup, state, config, pc, events) {
   };
 };
 
-var drawStrum = function drawStrum(brushGroup, state, config, pc, events, strum, activePoint) {
+var _drawStrum$1 = function drawStrum(brushGroup, state, config, pc, events, strum, activePoint) {
   var _svg = pc.selection.select('svg').select('g#strums'),
-      id = strum.dims.i,
-      points = [strum.p1, strum.p2],
-      _line = _svg.selectAll('line#strum-' + id).data([strum]),
-      circles = _svg.selectAll('circle#strum-' + id).data(points),
-      _drag = drag();
-
+    id = strum.dims.i,
+    points = [strum.p1, strum.p2],
+    _line = _svg.selectAll('line#strum-' + id).data([strum]),
+    circles = _svg.selectAll('circle#strum-' + id).data(points),
+    _drag = drag();
   _line.enter().append('line').attr('id', 'strum-' + id).attr('class', 'strum');
-
   _line.attr('x1', function (d) {
     return d.p1[0];
   }).attr('y1', function (d) {
@@ -1046,17 +988,14 @@ var drawStrum = function drawStrum(brushGroup, state, config, pc, events, strum,
   }).attr('y2', function (d) {
     return d.p2[1];
   }).attr('stroke', 'black').attr('stroke-width', 2);
-
   _drag.on('drag', function (d, i) {
     var ev = event;
     i = i + 1;
     strum['p' + i][0] = Math.min(Math.max(strum.minX + 1, ev.x), strum.maxX);
     strum['p' + i][1] = Math.min(Math.max(strum.minY, ev.y), strum.maxY);
-    drawStrum(brushGroup, state, config, pc, events, strum, i - 1);
-  }).on('end', onDragEnd(brushGroup, state, config, pc, events));
-
+    _drawStrum$1(brushGroup, state, config, pc, events, strum, i - 1);
+  }).on('end', onDragEnd$1(brushGroup, state, config, pc, events));
   circles.enter().append('circle').attr('id', 'strum-' + id).attr('class', 'strum');
-
   circles.attr('cx', function (d) {
     return d[0];
   }).attr('cy', function (d) {
@@ -1069,17 +1008,15 @@ var drawStrum = function drawStrum(brushGroup, state, config, pc, events, strum,
     select(this).style('opacity', 0);
   }).call(_drag);
 };
-
-var onDrag = function onDrag(brushGroup, state, config, pc, events) {
+var onDrag$1 = function onDrag(brushGroup, state, config, pc, events) {
   return function () {
     var ev = event,
-        strum = state.strums[state.strums.active];
+      strum = state.strums[state.strums.active];
 
     // Make sure that the point is within the bounds
     strum.p2[0] = Math.min(Math.max(strum.minX + 1, ev.x - config.margin.left), strum.maxX);
     strum.p2[1] = Math.min(Math.max(strum.minY, ev.y - config.margin.top), strum.maxY);
-
-    drawStrum(brushGroup, state, config, pc, events, strum, 1);
+    _drawStrum$1(brushGroup, state, config, pc, events, strum, 1);
   };
 };
 
@@ -1088,7 +1025,11 @@ var h = function h(config) {
 };
 
 var dimensionsForPoint = function dimensionsForPoint(config, pc, xscale, p) {
-  var dims = { i: -1, left: undefined, right: undefined };
+  var dims = {
+    i: -1,
+    left: undefined,
+    right: undefined
+  };
   Object.keys(config.dimensions).some(function (dim, i) {
     if (xscale(dim) < p[0]) {
       dims.i = i;
@@ -1098,7 +1039,6 @@ var dimensionsForPoint = function dimensionsForPoint(config, pc, xscale, p) {
     }
     return true;
   });
-
   if (dims.left === undefined) {
     // Event on the left side of the first axis.
     dims.i = 0;
@@ -1110,7 +1050,6 @@ var dimensionsForPoint = function dimensionsForPoint(config, pc, xscale, p) {
     dims.right = dims.left;
     dims.left = pc.getOrderedDimensionKeys()[Object.keys(config.dimensions).length - 2];
   }
-
   return dims;
 };
 
@@ -1118,13 +1057,11 @@ var dimensionsForPoint = function dimensionsForPoint(config, pc, xscale, p) {
 // This will determine the freedom of movement, because a strum can
 // logically only happen between two axes, so no movement outside these axes
 // should be allowed.
-var onDragStart = function onDragStart(state, config, pc, xscale) {
+var onDragStart$1 = function onDragStart(state, config, pc, xscale) {
   return function () {
     var p = mouse(state.strumRect.node());
-
     p[0] = p[0] - config.margin.left;
     p[1] = p[1] - config.margin.top;
-
     var dims = dimensionsForPoint(config, pc, xscale, p);
     var strum = {
       p1: p,
@@ -1138,7 +1075,6 @@ var onDragStart = function onDragStart(state, config, pc, xscale) {
     // Make sure that the point is within the bounds
     strum.p1[0] = Math.min(Math.max(strum.minX, p[0]), strum.maxX);
     strum.p2 = strum.p1.slice();
-
     state.strums[dims.i] = strum;
     state.strums.active = dims.i;
   };
@@ -1149,32 +1085,29 @@ var brushReset$2 = function brushReset(brushGroup, state, config, pc, events) {
     var ids = Object.getOwnPropertyNames(state.strums).filter(function (d) {
       return !isNaN(d);
     });
-
     ids.forEach(function (d) {
       state.strums.active = d;
-      removeStrum(state, pc);
+      removeStrum$1(state, pc);
     });
-    onDragEnd(brushGroup, state, config, pc, events)();
+    onDragEnd$1(brushGroup, state, config, pc, events)();
   };
 };
 
 // Checks if the first dimension is directly left of the second dimension.
 var consecutive = function consecutive(dimensions) {
   return function (first, second) {
-    var keys$$1 = Object.keys(dimensions);
-
-    return keys$$1.some(function (d, i) {
-      return d === first ? i + i < keys$$1.length && dimensions[i + 1] === second : false;
+    var keys = Object.keys(dimensions);
+    return keys.some(function (d, i) {
+      return d === first ? i + i < keys.length && dimensions[i + 1] === second : false;
     });
   };
 };
 
-var install$2 = function install(brushGroup, state, config, pc, events, xscale) {
+var install$1 = function install(brushGroup, state, config, pc, events, xscale) {
   return function () {
     if (pc.g() === undefined || pc.g() === null) {
       pc.createAxes();
     }
-
     var _drag = drag();
 
     // Map of current strums. Strums are stored per segment of the PC. A segment,
@@ -1187,12 +1120,10 @@ var install$2 = function install(brushGroup, state, config, pc, events, xscale) 
     state.strums.width = function (id) {
       return state.strums[id] === undefined ? undefined : state.strums[id].maxX - state.strums[id].minX;
     };
-
     pc.on('axesreorder.strums', function () {
       var ids = Object.getOwnPropertyNames(state.strums).filter(function (d) {
         return !isNaN(d);
       });
-
       if (ids.length > 0) {
         // We have some strums, which might need to be removed.
         ids.forEach(function (d) {
@@ -1201,10 +1132,10 @@ var install$2 = function install(brushGroup, state, config, pc, events, xscale) 
           // If the two dimensions of the current strum are not next to each other
           // any more, than we'll need to remove the strum. Otherwise we keep it.
           if (!consecutive(config.dimensions)(dims.left, dims.right)) {
-            removeStrum(state, pc);
+            removeStrum$1(state, pc);
           }
         });
-        onDragEnd(brushGroup, state, config, pc, events)();
+        onDragEnd$1(brushGroup, state, config, pc, events)();
       }
     });
 
@@ -1213,8 +1144,7 @@ var install$2 = function install(brushGroup, state, config, pc, events, xscale) 
 
     // Install the required brushReset function
     pc.brushReset = brushReset$2(brushGroup, state, config, pc, events);
-
-    _drag.on('start', onDragStart(state, config, pc, xscale)).on('drag', onDrag(brushGroup, state, config, pc, events)).on('end', onDragEnd(brushGroup, state, config, pc, events));
+    _drag.on('start', onDragStart$1(state, config, pc, xscale)).on('drag', onDrag$1(brushGroup, state, config, pc, events)).on('end', onDragEnd$1(brushGroup, state, config, pc, events));
 
     // NOTE: The styling needs to be done here and not in the css. This is because
     //       for 1D brushing, the canvas layers should not listen to
@@ -1228,10 +1158,9 @@ var install2DStrums = function install2DStrums(brushGroup, config, pc, events, x
     strums: {},
     strumRect: {}
   };
-
   brushGroup.modes['2D-strums'] = {
-    install: install$2(brushGroup, state, config, pc, events, xscale),
-    uninstall: uninstall$2(state, pc),
+    install: install$1(brushGroup, state, config, pc, events, xscale),
+    uninstall: uninstall$1(state, pc),
     selected: selected$2(brushGroup, state, config),
     brushState: function brushState() {
       return state.strums;
@@ -1239,14 +1168,12 @@ var install2DStrums = function install2DStrums(brushGroup, config, pc, events, x
   };
 };
 
-var uninstall$3 = function uninstall(state, pc) {
+var uninstall = function uninstall(state, pc) {
   return function () {
     pc.selection.select('svg').select('g#arcs').remove();
     pc.selection.select('svg').select('rect#arc-events').remove();
     pc.on('axesreorder.arcs', undefined);
-
     delete pc.brushReset;
-
     state.strumRect = undefined;
   };
 };
@@ -1266,11 +1193,10 @@ var signedAngle = function signedAngle(angle) {
  * 'signed' angle, where 0 is the horizontal line (3 o'clock), and +/- PI/2
  * are 12 and 6 o'clock respectively.
  */
-var containmentTest$1 = function containmentTest(arc$$1) {
+var containmentTest = function containmentTest(arc) {
   return function (a) {
-    var startAngle = signedAngle(arc$$1.startAngle);
-    var endAngle = signedAngle(arc$$1.endAngle);
-
+    var startAngle = signedAngle(arc.startAngle);
+    var endAngle = signedAngle(arc.endAngle);
     if (startAngle > endAngle) {
       var tmp = startAngle;
       startAngle = endAngle;
@@ -1281,35 +1207,30 @@ var containmentTest$1 = function containmentTest(arc$$1) {
     return a >= startAngle && a <= endAngle;
   };
 };
-
-var crossesStrum$1 = function crossesStrum(state, config) {
+var crossesStrum = function crossesStrum(state, config) {
   return function (d, id) {
-    var arc$$1 = state.arcs[id],
-        test = containmentTest$1(arc$$1),
-        d1 = arc$$1.dims.left,
-        d2 = arc$$1.dims.right,
-        y1 = config.dimensions[d1].yscale,
-        y2 = config.dimensions[d2].yscale,
-        a = state.arcs.width(id),
-        b = y1(d[d1]) - y2(d[d2]),
-        c = hypothenuse(a, b),
-        angle = Math.asin(b / c); // rad in [-PI/2, PI/2]
+    var arc = state.arcs[id],
+      test = containmentTest(arc),
+      d1 = arc.dims.left,
+      d2 = arc.dims.right,
+      y1 = config.dimensions[d1].yscale,
+      y2 = config.dimensions[d2].yscale,
+      a = state.arcs.width(id),
+      b = y1(d[d1]) - y2(d[d2]),
+      c = hypothenuse(a, b),
+      angle = Math.asin(b / c); // rad in [-PI/2, PI/2]
     return test(angle);
   };
 };
-
-var selected$3 = function selected(brushGroup, state, config) {
+var selected$1 = function selected(brushGroup, state, config) {
   var ids = Object.getOwnPropertyNames(state.arcs).filter(function (d) {
     return !isNaN(d);
   });
   var brushed = config.data;
-
   if (ids.length === 0) {
     return brushed;
   }
-
-  var crossTest = crossesStrum$1(state, config);
-
+  var crossTest = crossesStrum(state, config);
   return brushed.filter(function (d) {
     switch (brushGroup.predicate) {
       case 'AND':
@@ -1326,57 +1247,55 @@ var selected$3 = function selected(brushGroup, state, config) {
   });
 };
 
-var removeStrum$1 = function removeStrum(state, pc) {
-  var arc$$1 = state.arcs[state.arcs.active],
-      svg = pc.selection.select('svg').select('g#arcs');
-
+var removeStrum = function removeStrum(state, pc) {
+  var arc = state.arcs[state.arcs.active],
+    svg = pc.selection.select('svg').select('g#arcs');
   delete state.arcs[state.arcs.active];
   state.arcs.active = undefined;
-  svg.selectAll('line#arc-' + arc$$1.dims.i).remove();
-  svg.selectAll('circle#arc-' + arc$$1.dims.i).remove();
-  svg.selectAll('path#arc-' + arc$$1.dims.i).remove();
+  svg.selectAll('line#arc-' + arc.dims.i).remove();
+  svg.selectAll('circle#arc-' + arc.dims.i).remove();
+  svg.selectAll('path#arc-' + arc.dims.i).remove();
 };
 
-var onDragEnd$1 = function onDragEnd(brushGroup, state, config, pc, events) {
+var onDragEnd = function onDragEnd(brushGroup, state, config, pc, events) {
   return function () {
-    var arc$$1 = state.arcs[state.arcs.active];
+    var arc = state.arcs[state.arcs.active];
 
     // Okay, somewhat unexpected, but not totally unsurprising, a mousclick is
     // considered a drag without move. So we have to deal with that case
-    if (arc$$1 && arc$$1.p1[0] === arc$$1.p2[0] && arc$$1.p1[1] === arc$$1.p2[1]) {
-      removeStrum$1(state, pc);
+    if (arc && arc.p1[0] === arc.p2[0] && arc.p1[1] === arc.p2[1]) {
+      removeStrum(state, pc);
     }
-
-    if (arc$$1) {
+    if (arc) {
       var angle = state.arcs.startAngle(state.arcs.active);
-
-      arc$$1.startAngle = angle;
-      arc$$1.endAngle = angle;
-      arc$$1.arc.outerRadius(state.arcs.length(state.arcs.active)).startAngle(angle).endAngle(angle);
+      arc.startAngle = angle;
+      arc.endAngle = angle;
+      arc.arc.outerRadius(state.arcs.length(state.arcs.active)).startAngle(angle).endAngle(angle);
     }
-
     state.arcs.active = undefined;
-    config.brushed = selected$3(brushGroup, state, config);
+    config.brushed = selected$1(brushGroup, state, config);
     pc.renderBrushed();
     events.call('brushend', pc, config.brushed);
   };
 };
 
-var drawStrum$1 = function drawStrum(brushGroup, state, config, pc, events, arc$$1, activePoint) {
+var _drawStrum = function drawStrum(brushGroup, state, config, pc, events, arc, activePoint) {
   var svg = pc.selection.select('svg').select('g#arcs'),
-      id = arc$$1.dims.i,
-      points = [arc$$1.p2, arc$$1.p3],
-      _line = svg.selectAll('line#arc-' + id).data([{ p1: arc$$1.p1, p2: arc$$1.p2 }, { p1: arc$$1.p1, p2: arc$$1.p3 }]),
-      circles = svg.selectAll('circle#arc-' + id).data(points),
-      _drag = drag(),
-      _path = svg.selectAll('path#arc-' + id).data([arc$$1]);
-
+    id = arc.dims.i,
+    points = [arc.p2, arc.p3],
+    _line = svg.selectAll('line#arc-' + id).data([{
+      p1: arc.p1,
+      p2: arc.p2
+    }, {
+      p1: arc.p1,
+      p2: arc.p3
+    }]),
+    circles = svg.selectAll('circle#arc-' + id).data(points),
+    _drag = drag(),
+    _path = svg.selectAll('path#arc-' + id).data([arc]);
   _path.enter().append('path').attr('id', 'arc-' + id).attr('class', 'arc').style('fill', 'orange').style('opacity', 0.5);
-
-  _path.attr('d', arc$$1.arc).attr('transform', 'translate(' + arc$$1.p1[0] + ',' + arc$$1.p1[1] + ')');
-
+  _path.attr('d', arc.arc).attr('transform', 'translate(' + arc.p1[0] + ',' + arc.p1[1] + ')');
   _line.enter().append('line').attr('id', 'arc-' + id).attr('class', 'arc');
-
   _line.attr('x1', function (d) {
     return d.p1[0];
   }).attr('y1', function (d) {
@@ -1386,31 +1305,24 @@ var drawStrum$1 = function drawStrum(brushGroup, state, config, pc, events, arc$
   }).attr('y2', function (d) {
     return d.p2[1];
   }).attr('stroke', 'black').attr('stroke-width', 2);
-
   _drag.on('drag', function (d, i) {
     var ev = event;
     i = i + 2;
-
-    arc$$1['p' + i][0] = Math.min(Math.max(arc$$1.minX + 1, ev.x), arc$$1.maxX);
-    arc$$1['p' + i][1] = Math.min(Math.max(arc$$1.minY, ev.y), arc$$1.maxY);
-
+    arc['p' + i][0] = Math.min(Math.max(arc.minX + 1, ev.x), arc.maxX);
+    arc['p' + i][1] = Math.min(Math.max(arc.minY, ev.y), arc.maxY);
     var angle = i === 3 ? state.arcs.startAngle(id) : state.arcs.endAngle(id);
-
-    if (arc$$1.startAngle < Math.PI && arc$$1.endAngle < Math.PI && angle < Math.PI || arc$$1.startAngle >= Math.PI && arc$$1.endAngle >= Math.PI && angle >= Math.PI) {
+    if (arc.startAngle < Math.PI && arc.endAngle < Math.PI && angle < Math.PI || arc.startAngle >= Math.PI && arc.endAngle >= Math.PI && angle >= Math.PI) {
       if (i === 2) {
-        arc$$1.endAngle = angle;
-        arc$$1.arc.endAngle(angle);
+        arc.endAngle = angle;
+        arc.arc.endAngle(angle);
       } else if (i === 3) {
-        arc$$1.startAngle = angle;
-        arc$$1.arc.startAngle(angle);
+        arc.startAngle = angle;
+        arc.arc.startAngle(angle);
       }
     }
-
-    drawStrum(brushGroup, state, config, pc, events, arc$$1, i - 2);
-  }).on('end', onDragEnd$1(brushGroup, state, config, pc, events));
-
+    _drawStrum(brushGroup, state, config, pc, events, arc, i - 2);
+  }).on('end', onDragEnd(brushGroup, state, config, pc, events));
   circles.enter().append('circle').attr('id', 'arc-' + id).attr('class', 'arc');
-
   circles.attr('cx', function (d) {
     return d[0];
   }).attr('cy', function (d) {
@@ -1423,17 +1335,16 @@ var drawStrum$1 = function drawStrum(brushGroup, state, config, pc, events, arc$
     select(this).style('opacity', 0);
   }).call(_drag);
 };
-
-var onDrag$1 = function onDrag(brushGroup, state, config, pc, events) {
+var onDrag = function onDrag(brushGroup, state, config, pc, events) {
   return function () {
     var ev = event,
-        arc$$1 = state.arcs[state.arcs.active];
+      arc = state.arcs[state.arcs.active];
 
     // Make sure that the point is within the bounds
-    arc$$1.p2[0] = Math.min(Math.max(arc$$1.minX + 1, ev.x - config.margin.left), arc$$1.maxX);
-    arc$$1.p2[1] = Math.min(Math.max(arc$$1.minY, ev.y - config.margin.top), arc$$1.maxY);
-    arc$$1.p3 = arc$$1.p2.slice();
-    drawStrum$1(brushGroup, state, config, pc, events, arc$$1, 1);
+    arc.p2[0] = Math.min(Math.max(arc.minX + 1, ev.x - config.margin.left), arc.maxX);
+    arc.p2[1] = Math.min(Math.max(arc.minY, ev.y - config.margin.top), arc.maxY);
+    arc.p3 = arc.p2.slice();
+    _drawStrum(brushGroup, state, config, pc, events, arc, 1);
   };
 };
 
@@ -1441,15 +1352,13 @@ var onDrag$1 = function onDrag(brushGroup, state, config, pc, events) {
 // This will determine the freedom of movement, because a arc can
 // logically only happen between two axes, so no movement outside these axes
 // should be allowed.
-var onDragStart$1 = function onDragStart(state, config, pc, xscale) {
+var onDragStart = function onDragStart(state, config, pc, xscale) {
   return function () {
     var p = mouse(state.strumRect.node());
-
     p[0] = p[0] - config.margin.left;
     p[1] = p[1] - config.margin.top;
-
     var dims = dimensionsForPoint(config, pc, xscale, p);
-    var arc$$1 = {
+    var arc$1 = {
       p1: p,
       dims: dims,
       minX: xscale(dims.left),
@@ -1462,94 +1371,78 @@ var onDragStart$1 = function onDragStart(state, config, pc, xscale) {
     };
 
     // Make sure that the point is within the bounds
-    arc$$1.p1[0] = Math.min(Math.max(arc$$1.minX, p[0]), arc$$1.maxX);
-    arc$$1.p2 = arc$$1.p1.slice();
-    arc$$1.p3 = arc$$1.p1.slice();
-
-    state.arcs[dims.i] = arc$$1;
+    arc$1.p1[0] = Math.min(Math.max(arc$1.minX, p[0]), arc$1.maxX);
+    arc$1.p2 = arc$1.p1.slice();
+    arc$1.p3 = arc$1.p1.slice();
+    state.arcs[dims.i] = arc$1;
     state.arcs.active = dims.i;
   };
 };
 
-var brushReset$3 = function brushReset(brushGroup, state, config, pc, events) {
+var brushReset$1 = function brushReset(brushGroup, state, config, pc, events) {
   return function () {
     var ids = Object.getOwnPropertyNames(state.arcs).filter(function (d) {
       return !isNaN(d);
     });
-
     ids.forEach(function (d) {
       state.arcs.active = d;
-      removeStrum$1(state, pc);
+      removeStrum(state, pc);
     });
-    onDragEnd$1(brushGroup, state, config, pc, events)();
+    onDragEnd(brushGroup, state, config, pc, events)();
   };
 };
 
 // returns angles in [-PI/2, PI/2]
 var angle = function angle(p1, p2) {
   var a = p1[0] - p2[0],
-      b = p1[1] - p2[1],
-      c = hypothenuse(a, b);
-
+    b = p1[1] - p2[1],
+    c = hypothenuse(a, b);
   return Math.asin(b / c);
 };
-
 var endAngle = function endAngle(state) {
   return function (id) {
-    var arc$$1 = state.arcs[id];
-    if (arc$$1 === undefined) {
+    var arc = state.arcs[id];
+    if (arc === undefined) {
       return undefined;
     }
-    var sAngle = angle(arc$$1.p1, arc$$1.p2),
-        uAngle = -sAngle + Math.PI / 2;
-
-    if (arc$$1.p1[0] > arc$$1.p2[0]) {
+    var sAngle = angle(arc.p1, arc.p2),
+      uAngle = -sAngle + Math.PI / 2;
+    if (arc.p1[0] > arc.p2[0]) {
       uAngle = 2 * Math.PI - uAngle;
     }
-
     return uAngle;
   };
 };
-
 var startAngle = function startAngle(state) {
   return function (id) {
-    var arc$$1 = state.arcs[id];
-    if (arc$$1 === undefined) {
+    var arc = state.arcs[id];
+    if (arc === undefined) {
       return undefined;
     }
-
-    var sAngle = angle(arc$$1.p1, arc$$1.p3),
-        uAngle = -sAngle + Math.PI / 2;
-
-    if (arc$$1.p1[0] > arc$$1.p3[0]) {
+    var sAngle = angle(arc.p1, arc.p3),
+      uAngle = -sAngle + Math.PI / 2;
+    if (arc.p1[0] > arc.p3[0]) {
       uAngle = 2 * Math.PI - uAngle;
     }
-
     return uAngle;
   };
 };
-
 var length = function length(state) {
   return function (id) {
-    var arc$$1 = state.arcs[id];
-
-    if (arc$$1 === undefined) {
+    var arc = state.arcs[id];
+    if (arc === undefined) {
       return undefined;
     }
-
-    var a = arc$$1.p1[0] - arc$$1.p2[0],
-        b = arc$$1.p1[1] - arc$$1.p2[1];
-
+    var a = arc.p1[0] - arc.p2[0],
+      b = arc.p1[1] - arc.p2[1];
     return hypothenuse(a, b);
   };
 };
-
-var install$3 = function install(brushGroup, state, config, pc, events, xscale) {
+var install = function install(brushGroup, state, config, pc, events, xscale) {
   return function () {
     if (!pc.g()) {
       pc.createAxes();
     }
-
     var _drag = drag();
 
     // Map of current arcs. arcs are stored per segment of the PC. A segment,
@@ -1560,20 +1453,18 @@ var install$3 = function install(brushGroup, state, config, pc, events, xscale) 
     // implementation, we keep for when non-even spaced segments are supported as
     // well.
     state.arcs.width = function (id) {
-      var arc$$1 = state.arcs[id];
-      return arc$$1 === undefined ? undefined : arc$$1.maxX - arc$$1.minX;
+      var arc = state.arcs[id];
+      return arc === undefined ? undefined : arc.maxX - arc.minX;
     };
 
     // returns angles in [0, 2 * PI]
     state.arcs.endAngle = endAngle(state);
     state.arcs.startAngle = startAngle(state);
     state.arcs.length = length(state);
-
     pc.on('axesreorder.arcs', function () {
       var ids = Object.getOwnPropertyNames(arcs).filter(function (d) {
         return !isNaN(d);
       });
-
       if (ids.length > 0) {
         // We have some arcs, which might need to be removed.
         ids.forEach(function (d) {
@@ -1582,10 +1473,10 @@ var install$3 = function install(brushGroup, state, config, pc, events, xscale) 
           // If the two dimensions of the current arc are not next to each other
           // any more, than we'll need to remove the arc. Otherwise we keep it.
           if (!consecutive(dims)(dims.left, dims.right)) {
-            removeStrum$1(state, pc);
+            removeStrum(state, pc);
           }
         });
-        onDragEnd$1(brushGroup, state, config, pc, events)();
+        onDragEnd(brushGroup, state, config, pc, events)();
       }
     });
 
@@ -1593,9 +1484,8 @@ var install$3 = function install(brushGroup, state, config, pc, events, xscale) 
     pc.selection.select('svg').append('g').attr('id', 'arcs').attr('transform', 'translate(' + config.margin.left + ',' + config.margin.top + ')');
 
     // Install the required brushReset function
-    pc.brushReset = brushReset$3(brushGroup, state, config, pc, events);
-
-    _drag.on('start', onDragStart$1(state, config, pc, xscale)).on('drag', onDrag$1(brushGroup, state, config, pc, events)).on('end', onDragEnd$1(brushGroup, state, config, pc, events));
+    pc.brushReset = brushReset$1(brushGroup, state, config, pc, events);
+    _drag.on('start', onDragStart(state, config, pc, xscale)).on('drag', onDrag(brushGroup, state, config, pc, events)).on('end', onDragEnd(brushGroup, state, config, pc, events));
 
     // NOTE: The styling needs to be done here and not in the css. This is because
     //       for 1D brushing, the canvas layers should not listen to
@@ -1609,11 +1499,10 @@ var installAngularBrush = function installAngularBrush(brushGroup, config, pc, e
     arcs: {},
     strumRect: {}
   };
-
   brushGroup.modes['angular'] = {
-    install: install$3(brushGroup, state, config, pc, events, xscale),
-    uninstall: uninstall$3(state, pc),
-    selected: selected$3(brushGroup, state, config),
+    install: install(brushGroup, state, config, pc, events, xscale),
+    uninstall: uninstall(state, pc),
+    selected: selected$1(brushGroup, state, config),
     brushState: function brushState() {
       return state.arcs;
     }
@@ -1638,11 +1527,9 @@ var mergeParcoords = function mergeParcoords(pc) {
 
     // Create a canvas element to store the merged canvases
     var mergedCanvas = document.createElement('canvas');
-
     var foregroundCanvas = pc.canvas.foreground;
     // We will need to adjust for canvas margins to align the svg and canvas
     var canvasMarginLeft = Number(foregroundCanvas.style.marginLeft.replace('px', ''));
-
     var textTopAdjust = 15;
     var canvasMarginTop = Number(foregroundCanvas.style.marginTop.replace('px', '')) + textTopAdjust;
     var width = (foregroundCanvas.clientWidth + canvasMarginLeft) * devicePixelRatio;
@@ -1661,9 +1548,6 @@ var mergeParcoords = function mergeParcoords(pc) {
     for (var key in pc.canvas) {
       context.drawImage(pc.canvas[key], canvasMarginLeft * devicePixelRatio, canvasMarginTop * devicePixelRatio, width - canvasMarginLeft * devicePixelRatio, height - canvasMarginTop * devicePixelRatio);
     }
-
-    // Add SVG elements to canvas
-    var DOMURL = window.URL || window.webkitURL || window;
     var serializer = new XMLSerializer();
     // axis labels are translated (0,-5) so we will clone the svg
     //   and translate down so the labels are drawn on the canvas
@@ -1689,7 +1573,7 @@ var mergeParcoords = function mergeParcoords(pc) {
   };
 };
 
-var selected$4 = function selected(config, pc) {
+var selected = function selected(config, pc) {
   return function () {
     var actives = [];
     var extents = [];
@@ -1720,7 +1604,7 @@ var selected$4 = function selected(config, pc) {
           } else {
             ranges[nodes[k].__data__] = brushSelection(nodes[k]);
             var dimRange = config.dimensions[nodes[k].__data__].yscale.range();
-            var dimDomain = config.dimensions[nodes[k].__data__].yscale.domain();
+            config.dimensions[nodes[k].__data__].yscale.domain();
             for (var j = 0; j < dimRange.length; j++) {
               if (dimRange[j] >= ranger[0] && dimRange[j] <= ranger[1] && actives.includes(nodes[k].__data__) && config.flipAxes.includes(nodes[k].__data__)) {
                 values.push(dimRange[j]);
@@ -1765,7 +1649,6 @@ var selected$4 = function selected(config, pc) {
       // first must find active axes by iterating through all brushes
       // then go through similiar process as above.
       var multiBrushData = [];
-
       var _loop = function _loop(idx) {
         var brush = config.brushes[idx];
         var values = [];
@@ -1788,7 +1671,7 @@ var selected$4 = function selected(config, pc) {
         } else {
           ranges[brush.data] = brush.extent;
           var _dimRange = config.dimensions[brush.data].yscale.range();
-          var _dimDomain = config.dimensions[brush.data].yscale.domain();
+          config.dimensions[brush.data].yscale.domain();
           for (var _j = 0; _j < _dimRange.length; _j++) {
             if (_dimRange[_j] >= ranger[0] && _dimRange[_j] <= ranger[1] && actives.includes(brush.data) && config.flipAxes.includes(brush.data)) {
               values.push(_dimRange[_j]);
@@ -1835,7 +1718,6 @@ var selected$4 = function selected(config, pc) {
         actives = [];
         ranges = {};
       };
-
       for (var idx = 0; idx < config.brushes.length; idx++) {
         _loop(idx);
       }
@@ -1847,31 +1729,25 @@ var selected$4 = function selected(config, pc) {
 var brushPredicate = function brushPredicate(brushGroup, config, pc) {
   return function () {
     var predicate = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : null;
-
     if (predicate === null) {
       return brushGroup.predicate;
     }
-
     predicate = String(predicate).toUpperCase();
     if (predicate !== 'AND' && predicate !== 'OR') {
       throw new Error('Invalid predicate ' + predicate);
     }
-
     brushGroup.predicate = predicate;
     config.brushed = brushGroup.currentMode().selected();
     pc.renderBrushed();
     return pc;
   };
 };
-
 var brushMode = function brushMode(brushGroup, config, pc) {
   return function () {
     var mode = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : null;
-
     if (mode === null) {
       return brushGroup.mode;
     }
-
     if (pc.brushModes().indexOf(mode) === -1) {
       throw new Error('pc.brushmode: Unsupported brush mode: ' + mode);
     }
@@ -1896,7 +1772,6 @@ var brushMode = function brushMode(brushGroup, config, pc) {
         pc.brushPredicate = brushPredicate(brushGroup, config, pc);
       }
     }
-
     return pc;
   };
 };
@@ -1929,35 +1804,28 @@ var flipAxisAndUpdatePCP = function flipAxisAndUpdatePCP(config, pc, axis) {
 
 var rotateLabels = function rotateLabels(config, pc) {
   if (!config.rotateLabels) return;
-
   var delta = event.deltaY;
   delta = delta < 0 ? -5 : delta;
   delta = delta > 0 ? 5 : delta;
-
   config.dimensionTitleRotation += delta;
   pc.svg.selectAll('text.label').attr('transform', 'translate(0,-5) rotate(' + config.dimensionTitleRotation + ')');
   event.preventDefault();
 };
 
-var _this$2 = undefined;
-
+var _this$3 = undefined;
 var updateAxes = function updateAxes(config, pc, position, axis, flags) {
   return function () {
     var animationTime = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : null;
-
     if (animationTime === null) {
       animationTime = config.animationTime;
     }
-
     var g_data = pc.svg.selectAll('.dimension').data(pc.getOrderedDimensionKeys());
     // Enter
     g_data.enter().append('svg:g').attr('class', 'dimension').attr('transform', function (p) {
       return 'translate(' + position(p) + ')';
     }).style('opacity', 0).append('svg:g').attr('class', 'axis').attr('transform', 'translate(0,0)').each(function (d) {
       var axisElement = select(this).call(pc.applyAxisConfig(axis, config.dimensions[d]));
-
       axisElement.selectAll('path').style('fill', 'none').style('stroke', '#222').style('shape-rendering', 'crispEdges');
-
       axisElement.selectAll('line').style('fill', 'none').style('stroke', '#222').style('shape-rendering', 'crispEdges');
     }).append('svg:text').attr('text-anchor', 'middle').attr('class', 'label').attr('x', 0).attr('y', 0).attr('transform', 'translate(0,-5) rotate(' + config.dimensionTitleRotation + ')').text(dimensionLabels(config)).on('dblclick', flipAxisAndUpdatePCP(config, pc, axis)).on('wheel', rotateLabels(config, pc));
 
@@ -1970,16 +1838,13 @@ var updateAxes = function updateAxes(config, pc, position, axis, flags) {
 
     // Exit
     g_data.exit().remove();
-
     var g = pc.svg.selectAll('.dimension');
     g.transition().duration(animationTime).attr('transform', function (p) {
       return 'translate(' + position(p) + ')';
     }).style('opacity', 1);
-
     pc.svg.selectAll('.axis').transition().duration(animationTime).each(function (d) {
       select(this).call(pc.applyAxisConfig(axis, config.dimensions[d]));
     });
-
     if (flags.brushable) pc.brushable();
     if (flags.reorderable) pc.reorderable();
     if (pc.brushMode() !== 'None') {
@@ -1987,14 +1852,13 @@ var updateAxes = function updateAxes(config, pc, position, axis, flags) {
       pc.brushMode('None');
       pc.brushMode(mode);
     }
-    return _this$2;
+    return _this$3;
   };
 };
 
 /** adjusts an axis' default range [h()+1, 1] if a NullValueSeparator is set */
 var getRange = function getRange(config) {
   var h = config.height - config.margin.top - config.margin.bottom;
-
   if (config.nullValueSeparator == 'bottom') {
     return [h + 1 - config.nullValueSeparatorPadding.bottom - config.nullValueSeparatorPadding.top, 1];
   } else if (config.nullValueSeparator == 'top') {
@@ -2039,7 +1903,7 @@ var autoscale = function autoscale(config, pc, xscale, ctx) {
       },
       string: function string(k) {
         var counts = {},
-            domain = [];
+          domain = [];
         // Let's get the count for each value so that we can sort the domain based
         // on the number of items for each value.
         config.data.map(function (p) {
@@ -2110,7 +1974,6 @@ var autoscale = function autoscale(config, pc, xscale, ctx) {
     ctx.marked.shadowColor = config.markedShadowColor;
     ctx.marked.shadowBlur = config.markedShadowBlur;
     ctx.marked.scale(devicePixelRatio, devicePixelRatio);
-
     return this;
   };
 };
@@ -2120,7 +1983,6 @@ var brushable = function brushable(config, pc, flags) {
     if (!pc.g()) {
       pc.createAxes();
     }
-
     var g = pc.g();
 
     // Add and store a brush for each axis.
@@ -2165,7 +2027,6 @@ var brushable = function brushable(config, pc, flags) {
         });
       }
     });
-
     flags.brushable = true;
     return this;
   };
@@ -2188,14 +2049,12 @@ var commonScale = function commonScale(config, pc) {
     var scales = Object.keys(config.dimensions).filter(function (p) {
       return config.dimensions[p].type == t;
     });
-
     if (global) {
       var _extent = extent(scales.map(function (d) {
         return config.dimensions[d].yscale.domain();
       }).reduce(function (cur, acc) {
         return cur.concat(acc);
       }));
-
       scales.forEach(function (d) {
         config.dimensions[d].yscale.domain(_extent);
       });
@@ -2211,7 +2070,6 @@ var commonScale = function commonScale(config, pc) {
     if (config.bundleDimension !== null) {
       pc.bundleDimension(config.bundleDimension);
     }
-
     return this;
   };
 };
@@ -2226,56 +2084,16 @@ var computeRealCentroids = function computeRealCentroids(config, position) {
   };
 };
 
-var classCallCheck = function (instance, Constructor) {
-  if (!(instance instanceof Constructor)) {
-    throw new TypeError("Cannot call a class as a function");
-  }
-};
-
-var createClass = function () {
-  function defineProperties(target, props) {
-    for (var i = 0; i < props.length; i++) {
-      var descriptor = props[i];
-      descriptor.enumerable = descriptor.enumerable || false;
-      descriptor.configurable = true;
-      if ("value" in descriptor) descriptor.writable = true;
-      Object.defineProperty(target, descriptor.key, descriptor);
-    }
-  }
-
-  return function (Constructor, protoProps, staticProps) {
-    if (protoProps) defineProperties(Constructor.prototype, protoProps);
-    if (staticProps) defineProperties(Constructor, staticProps);
-    return Constructor;
-  };
-}();
-
-var _extends = Object.assign || function (target) {
-  for (var i = 1; i < arguments.length; i++) {
-    var source = arguments[i];
-
-    for (var key in source) {
-      if (Object.prototype.hasOwnProperty.call(source, key)) {
-        target[key] = source[key];
-      }
-    }
-  }
-
-  return target;
-};
-
 var isValid = function isValid(d) {
   return d !== null && d !== undefined;
 };
-
 var applyDimensionDefaults = function applyDimensionDefaults(config, pc) {
   return function (dims) {
     var types = pc.detectDimensionTypes(config.data);
     dims = dims ? dims : Object.keys(types);
-
     return dims.reduce(function (acc, cur, i) {
       var k = config.dimensions[cur] ? config.dimensions[cur] : {};
-      acc[cur] = _extends({}, k, {
+      acc[cur] = _objectSpread2(_objectSpread2({}, k), {}, {
         orient: isValid(k.orient) ? k.orient : 'left',
         ticks: isValid(k.ticks) ? k.ticks : 5,
         innerTickSize: isValid(k.innerTickSize) ? k.innerTickSize : 6,
@@ -2284,7 +2102,6 @@ var applyDimensionDefaults = function applyDimensionDefaults(config, pc) {
         type: isValid(k.type) ? k.type : types[cur],
         index: isValid(k.index) ? k.index : i
       });
-
       return acc;
     }, {});
   };
@@ -2314,24 +2131,20 @@ var createAxes = function createAxes(config, pc, xscale, flags, axis) {
     // Add an axis and title.
     pc._g.append('svg:g').attr('class', 'axis').attr('transform', 'translate(0,0)').each(function (d) {
       var axisElement = select(this).call(pc.applyAxisConfig(axis, config.dimensions[d]));
-
       axisElement.selectAll('path').style('fill', 'none').style('stroke', '#222').style('shape-rendering', 'crispEdges');
-
       axisElement.selectAll('line').style('fill', 'none').style('stroke', '#222').style('shape-rendering', 'crispEdges');
     }).append('svg:text').attr('text-anchor', 'middle').attr('y', 0).attr('transform', 'translate(0,-5) rotate(' + config.dimensionTitleRotation + ')').attr('x', 0).attr('class', 'label').text(dimensionLabels(config)).on('dblclick', flipAxisAndUpdatePCP(config, pc, axis)).on('wheel', rotateLabels(config, pc));
-
     if (config.nullValueSeparator === 'top') {
       pc.svg.append('line').attr('x1', 0).attr('y1', 1 + config.nullValueSeparatorPadding.top).attr('x2', w(config)).attr('y2', 1 + config.nullValueSeparatorPadding.top).attr('stroke-width', 1).attr('stroke', '#777').attr('fill', 'none').attr('shape-rendering', 'crispEdges');
     } else if (config.nullValueSeparator === 'bottom') {
       pc.svg.append('line').attr('x1', 0).attr('y1', h(config) + 1 - config.nullValueSeparatorPadding.bottom).attr('x2', w(config)).attr('y2', h(config) + 1 - config.nullValueSeparatorPadding.bottom).attr('stroke-width', 1).attr('stroke', '#777').attr('fill', 'none').attr('shape-rendering', 'crispEdges');
     }
-
     flags.axes = true;
     return this;
   };
 };
 
-var _this$3 = undefined;
+var _this$2 = undefined;
 
 //draw dots with radius r on the axis line where data intersects
 var axisDots = function axisDots(config, pc, position) {
@@ -2349,13 +2162,12 @@ var axisDots = function axisDots(config, pc, position) {
         ctx.fill();
       });
     });
-    return _this$3;
+    return _this$2;
   };
 };
 
 var applyAxisConfig = function applyAxisConfig(axis, dimension) {
-  var axisCfg = void 0;
-
+  var axisCfg;
   switch (dimension.orient) {
     case 'left':
       axisCfg = axisLeft(dimension.yscale);
@@ -2373,9 +2185,7 @@ var applyAxisConfig = function applyAxisConfig(axis, dimension) {
       axisCfg = axisLeft(dimension.yscale);
       break;
   }
-
   axisCfg.ticks(dimension.ticks).tickValues(dimension.tickValues).tickSizeInner(dimension.innerTickSize).tickSizeOuter(dimension.outerTickSize).tickPadding(dimension.tickPadding).tickFormat(dimension.tickFormat);
-
   return axisCfg;
 };
 
@@ -2384,7 +2194,6 @@ var reorderable = function reorderable(config, pc, xscale, position, dragging, f
   return function () {
     if (pc.g() === undefined) pc.createAxes();
     var g = pc.g();
-
     g.style('cursor', 'move').call(drag().on('start', function (d) {
       dragging[d] = this.__origin__ = xscale(d);
     }).on('drag', function (d) {
@@ -2425,13 +2234,11 @@ var resize = function resize(config, pc, flags, events) {
     if (pc.g()) pc.createAxes();
     if (flags.brushable) pc.brushable();
     if (flags.reorderable) pc.reorderable();
-
     events.call('resize', this, {
       width: config.width,
       height: config.height,
       margin: config.margin
     });
-
     return this;
   };
 };
@@ -2442,21 +2249,17 @@ var resize = function resize(config, pc, flags, events) {
 var reorder = function reorder(config, pc, xscale) {
   return function (rowdata) {
     var firstDim = pc.getOrderedDimensionKeys()[0];
-
     pc.sortDimensionsByRowData(rowdata);
     // NOTE: this is relatively cheap given that:
     // number of dimensions < number of data items
     // Thus we check equality of order to prevent rerendering when this is the case.
     var reordered = firstDim !== pc.getOrderedDimensionKeys()[0];
-
     if (reordered) {
       xscale.domain(pc.getOrderedDimensionKeys());
       var highlighted = config.highlighted.slice(0);
       pc.unhighlight();
-
       var marked = config.marked.slice(0);
       pc.unmark();
-
       var g = pc.g();
       g.transition().duration(1500).attr('transform', function (d) {
         return 'translate(' + xscale(d) + ')';
@@ -2509,9 +2312,7 @@ var sortDimensionsByRowData = function sortDimensionsByRowData(config) {
 
 var isBrushed = function isBrushed(config, brushGroup) {
   if (config.brushed && config.brushed.length !== config.data.length) return true;
-
   var object = brushGroup.currentMode().brushState();
-
   for (var key in object) {
     if (object.hasOwnProperty(key)) {
       return true;
@@ -2537,729 +2338,641 @@ var clear = function clear(config, pc, ctx, brushGroup) {
   };
 };
 
-var PRECISION = 1e-6;
+const PRECISION = 1e-6;
 
-var Matrix = function () {
-    function Matrix(elements) {
-        classCallCheck(this, Matrix);
-
-        this.setElements(elements);
+class Matrix {
+  constructor(elements) {
+    this.setElements(elements);
+  }
+  e(i, j) {
+    if (i < 1 || i > this.elements.length || j < 1 || j > this.elements[0].length) {
+      return null;
     }
-
-    createClass(Matrix, [{
-        key: "e",
-        value: function e(i, j) {
-            if (i < 1 || i > this.elements.length || j < 1 || j > this.elements[0].length) {
-                return null;
-            }
-            return this.elements[i - 1][j - 1];
-        }
-    }, {
-        key: "row",
-        value: function row(i) {
-            if (i > this.elements.length) {
-                return null;
-            }
-            return new Vector(this.elements[i - 1]);
-        }
-    }, {
-        key: "col",
-        value: function col(j) {
-            if (this.elements.length === 0) {
-                return null;
-            }
-            if (j > this.elements[0].length) {
-                return null;
-            }
-            var col = [],
-                n = this.elements.length;
-            for (var i = 0; i < n; i++) {
-                col.push(this.elements[i][j - 1]);
-            }
-            return new Vector(col);
-        }
-    }, {
-        key: "dimensions",
-        value: function dimensions() {
-            var cols = this.elements.length === 0 ? 0 : this.elements[0].length;
-            return { rows: this.elements.length, cols: cols };
-        }
-    }, {
-        key: "rows",
-        value: function rows() {
-            return this.elements.length;
-        }
-    }, {
-        key: "cols",
-        value: function cols() {
-            if (this.elements.length === 0) {
-                return 0;
-            }
-            return this.elements[0].length;
-        }
-    }, {
-        key: "eql",
-        value: function eql(matrix) {
-            var M = matrix.elements || matrix;
-            if (!M[0] || typeof M[0][0] === 'undefined') {
-                M = new Matrix(M).elements;
-            }
-            if (this.elements.length === 0 || M.length === 0) {
-                return this.elements.length === M.length;
-            }
-            if (this.elements.length !== M.length) {
-                return false;
-            }
-            if (this.elements[0].length !== M[0].length) {
-                return false;
-            }
-            var i = this.elements.length,
-                nj = this.elements[0].length,
-                j;
-            while (i--) {
-                j = nj;
-                while (j--) {
-                    if (Math.abs(this.elements[i][j] - M[i][j]) > PRECISION) {
-                        return false;
-                    }
-                }
-            }
-            return true;
-        }
-    }, {
-        key: "dup",
-        value: function dup() {
-            return new Matrix(this.elements);
-        }
-    }, {
-        key: "map",
-        value: function map(fn, context) {
-            if (this.elements.length === 0) {
-                return new Matrix([]);
-            }
-            var els = [],
-                i = this.elements.length,
-                nj = this.elements[0].length,
-                j;
-            while (i--) {
-                j = nj;
-                els[i] = [];
-                while (j--) {
-                    els[i][j] = fn.call(context, this.elements[i][j], i + 1, j + 1);
-                }
-            }
-            return new Matrix(els);
-        }
-    }, {
-        key: "isSameSizeAs",
-        value: function isSameSizeAs(matrix) {
-            var M = matrix.elements || matrix;
-            if (typeof M[0][0] === 'undefined') {
-                M = new Matrix(M).elements;
-            }
-            if (this.elements.length === 0) {
-                return M.length === 0;
-            }
-            return this.elements.length === M.length && this.elements[0].length === M[0].length;
-        }
-    }, {
-        key: "add",
-        value: function add(matrix) {
-            if (this.elements.length === 0) {
-                return this.map(function (x) {
-                    return x;
-                });
-            }
-            var M = matrix.elements || matrix;
-            if (typeof M[0][0] === 'undefined') {
-                M = new Matrix(M).elements;
-            }
-            if (!this.isSameSizeAs(M)) {
-                return null;
-            }
-            return this.map(function (x, i, j) {
-                return x + M[i - 1][j - 1];
-            });
-        }
-    }, {
-        key: "subtract",
-        value: function subtract(matrix) {
-            if (this.elements.length === 0) {
-                return this.map(function (x) {
-                    return x;
-                });
-            }
-            var M = matrix.elements || matrix;
-            if (typeof M[0][0] === 'undefined') {
-                M = new Matrix(M).elements;
-            }
-            if (!this.isSameSizeAs(M)) {
-                return null;
-            }
-            return this.map(function (x, i, j) {
-                return x - M[i - 1][j - 1];
-            });
-        }
-    }, {
-        key: "canMultiplyFromLeft",
-        value: function canMultiplyFromLeft(matrix) {
-            if (this.elements.length === 0) {
-                return false;
-            }
-            var M = matrix.elements || matrix;
-            if (typeof M[0][0] === 'undefined') {
-                M = new Matrix(M).elements;
-            }
-            // this.columns should equal matrix.rows
-            return this.elements[0].length === M.length;
-        }
-    }, {
-        key: "multiply",
-        value: function multiply(matrix) {
-            if (this.elements.length === 0) {
-                return null;
-            }
-            if (!matrix.elements) {
-                return this.map(function (x) {
-                    return x * matrix;
-                });
-            }
-            var returnVector = matrix.modulus ? true : false;
-            var M = matrix.elements || matrix;
-            if (typeof M[0][0] === 'undefined') {
-                M = new Matrix(M).elements;
-            }
-            if (!this.canMultiplyFromLeft(M)) {
-                return null;
-            }
-            var i = this.elements.length,
-                nj = M[0].length,
-                j;
-            var cols = this.elements[0].length,
-                c,
-                elements = [],
-                sum;
-            while (i--) {
-                j = nj;
-                elements[i] = [];
-                while (j--) {
-                    c = cols;
-                    sum = 0;
-                    while (c--) {
-                        sum += this.elements[i][c] * M[c][j];
-                    }
-                    elements[i][j] = sum;
-                }
-            }
-            var M = new Matrix(elements);
-            return returnVector ? M.col(1) : M;
-        }
-    }, {
-        key: "minor",
-        value: function minor(a, b, c, d) {
-            if (this.elements.length === 0) {
-                return null;
-            }
-            var elements = [],
-                ni = c,
-                i,
-                nj,
-                j;
-            var rows = this.elements.length,
-                cols = this.elements[0].length;
-            while (ni--) {
-                i = c - ni - 1;
-                elements[i] = [];
-                nj = d;
-                while (nj--) {
-                    j = d - nj - 1;
-                    elements[i][j] = this.elements[(a + i - 1) % rows][(b + j - 1) % cols];
-                }
-            }
-            return new Matrix(elements);
-        }
-    }, {
-        key: "transpose",
-        value: function transpose() {
-            if (this.elements.length === 0) {
-                return new Matrix([]);
-            }
-            var rows = this.elements.length,
-                i,
-                cols = this.elements[0].length,
-                j;
-            var elements = [],
-                i = cols;
-            while (i--) {
-                j = rows;
-                elements[i] = [];
-                while (j--) {
-                    elements[i][j] = this.elements[j][i];
-                }
-            }
-            return new Matrix(elements);
-        }
-    }, {
-        key: "isSquare",
-        value: function isSquare() {
-            var cols = this.elements.length === 0 ? 0 : this.elements[0].length;
-            return this.elements.length === cols;
-        }
-    }, {
-        key: "max",
-        value: function max() {
-            if (this.elements.length === 0) {
-                return null;
-            }
-            var m = 0,
-                i = this.elements.length,
-                nj = this.elements[0].length,
-                j;
-            while (i--) {
-                j = nj;
-                while (j--) {
-                    if (Math.abs(this.elements[i][j]) > Math.abs(m)) {
-                        m = this.elements[i][j];
-                    }
-                }
-            }
-            return m;
-        }
-    }, {
-        key: "indexOf",
-        value: function indexOf(x) {
-            if (this.elements.length === 0) {
-                return null;
-            }
-            var ni = this.elements.length,
-                i,
-                nj = this.elements[0].length,
-                j;
-            for (i = 0; i < ni; i++) {
-                for (j = 0; j < nj; j++) {
-                    if (this.elements[i][j] === x) {
-                        return {
-                            i: i + 1,
-                            j: j + 1
-                        };
-                    }
-                }
-            }
-            return null;
-        }
-    }, {
-        key: "diagonal",
-        value: function diagonal() {
-            if (!this.isSquare) {
-                return null;
-            }
-            var els = [],
-                n = this.elements.length;
-            for (var i = 0; i < n; i++) {
-                els.push(this.elements[i][i]);
-            }
-            return new Vector(els);
-        }
-    }, {
-        key: "toRightTriangular",
-        value: function toRightTriangular() {
-            if (this.elements.length === 0) {
-                return new Matrix([]);
-            }
-            var M = this.dup(),
-                els;
-            var n = this.elements.length,
-                i,
-                j,
-                np = this.elements[0].length,
-                p;
-            for (i = 0; i < n; i++) {
-                if (M.elements[i][i] === 0) {
-                    for (j = i + 1; j < n; j++) {
-                        if (M.elements[j][i] !== 0) {
-                            els = [];
-                            for (p = 0; p < np; p++) {
-                                els.push(M.elements[i][p] + M.elements[j][p]);
-                            }
-                            M.elements[i] = els;
-                            break;
-                        }
-                    }
-                }
-                if (M.elements[i][i] !== 0) {
-                    for (j = i + 1; j < n; j++) {
-                        var multiplier = M.elements[j][i] / M.elements[i][i];
-                        els = [];
-                        for (p = 0; p < np; p++) {
-                            // Elements with column numbers up to an including the number of the
-                            // row that we're subtracting can safely be set straight to zero,
-                            // since that's the point of this routine and it avoids having to
-                            // loop over and correct rounding errors later
-                            els.push(p <= i ? 0 : M.elements[j][p] - M.elements[i][p] * multiplier);
-                        }
-                        M.elements[j] = els;
-                    }
-                }
-            }
-            return M;
-        }
-    }, {
-        key: "determinant",
-        value: function determinant() {
-            if (this.elements.length === 0) {
-                return 1;
-            }
-            if (!this.isSquare()) {
-                return null;
-            }
-            var M = this.toRightTriangular();
-            var det = M.elements[0][0],
-                n = M.elements.length;
-            for (var i = 1; i < n; i++) {
-                det = det * M.elements[i][i];
-            }
-            return det;
-        }
-    }, {
-        key: "isSingular",
-        value: function isSingular() {
-            return this.isSquare() && this.determinant() === 0;
-        }
-    }, {
-        key: "trace",
-        value: function trace() {
-            if (this.elements.length === 0) {
-                return 0;
-            }
-            if (!this.isSquare()) {
-                return null;
-            }
-            var tr = this.elements[0][0],
-                n = this.elements.length;
-            for (var i = 1; i < n; i++) {
-                tr += this.elements[i][i];
-            }
-            return tr;
-        }
-    }, {
-        key: "rank",
-        value: function rank() {
-            if (this.elements.length === 0) {
-                return 0;
-            }
-            var M = this.toRightTriangular(),
-                rank = 0;
-            var i = this.elements.length,
-                nj = this.elements[0].length,
-                j;
-            while (i--) {
-                j = nj;
-                while (j--) {
-                    if (Math.abs(M.elements[i][j]) > PRECISION) {
-                        rank++;
-                        break;
-                    }
-                }
-            }
-            return rank;
-        }
-    }, {
-        key: "augment",
-        value: function augment(matrix) {
-            if (this.elements.length === 0) {
-                return this.dup();
-            }
-            var M = matrix.elements || matrix;
-            if (typeof M[0][0] === 'undefined') {
-                M = new Matrix(M).elements;
-            }
-            var T = this.dup(),
-                cols = T.elements[0].length;
-            var i = T.elements.length,
-                nj = M[0].length,
-                j;
-            if (i !== M.length) {
-                return null;
-            }
-            while (i--) {
-                j = nj;
-                while (j--) {
-                    T.elements[i][cols + j] = M[i][j];
-                }
-            }
-            return T;
-        }
-    }, {
-        key: "inverse",
-        value: function inverse() {
-            if (this.elements.length === 0) {
-                return null;
-            }
-            if (!this.isSquare() || this.isSingular()) {
-                return null;
-            }
-            var n = this.elements.length,
-                i = n,
-                j;
-            var M = this.augment(Matrix.I(n)).toRightTriangular();
-            var np = M.elements[0].length,
-                p,
-                els,
-                divisor;
-            var inverse_elements = [],
-                new_element;
-            // Matrix is non-singular so there will be no zeros on the
-            // diagonal. Cycle through rows from last to first.
-            while (i--) {
-                // First, normalise diagonal elements to 1
-                els = [];
-                inverse_elements[i] = [];
-                divisor = M.elements[i][i];
-                for (p = 0; p < np; p++) {
-                    new_element = M.elements[i][p] / divisor;
-                    els.push(new_element);
-                    // Shuffle off the current row of the right hand side into the results
-                    // array as it will not be modified by later runs through this loop
-                    if (p >= n) {
-                        inverse_elements[i].push(new_element);
-                    }
-                }
-                M.elements[i] = els;
-                // Then, subtract this row from those above it to give the identity matrix
-                // on the left hand side
-                j = i;
-                while (j--) {
-                    els = [];
-                    for (p = 0; p < np; p++) {
-                        els.push(M.elements[j][p] - M.elements[i][p] * M.elements[j][i]);
-                    }
-                    M.elements[j] = els;
-                }
-            }
-            return new Matrix(inverse_elements);
-        }
-    }, {
-        key: "round",
-        value: function round() {
-            return this.map(function (x) {
-                return Math.round(x);
-            });
-        }
-    }, {
-        key: "snapTo",
-        value: function snapTo(x) {
-            return this.map(function (p) {
-                return Math.abs(p - x) <= PRECISION ? x : p;
-            });
-        }
-    }, {
-        key: "inspect",
-        value: function inspect() {
-            var matrix_rows = [];
-            var n = this.elements.length;
-            if (n === 0) return '[]';
-            for (var i = 0; i < n; i++) {
-                matrix_rows.push(new Vector(this.elements[i]).inspect());
-            }
-            return matrix_rows.join('\n');
-        }
-    }, {
-        key: "setElements",
-        value: function setElements(els) {
-            var i,
-                j,
-                elements = els.elements || els;
-            if (elements[0] && typeof elements[0][0] !== 'undefined') {
-                i = elements.length;
-                this.elements = [];
-                while (i--) {
-                    j = elements[i].length;
-                    this.elements[i] = [];
-                    while (j--) {
-                        this.elements[i][j] = elements[i][j];
-                    }
-                }
-                return this;
-            }
-            var n = elements.length;
-            this.elements = [];
-            for (i = 0; i < n; i++) {
-                this.elements.push([elements[i]]);
-            }
-            return this;
-        }
-
-        //From glUtils.js
-
-    }, {
-        key: "flatten",
-        value: function flatten() {
-            var result = [];
-            if (this.elements.length == 0) {
-                return [];
-            }
-
-            for (var j = 0; j < this.elements[0].length; j++) {
-                for (var i = 0; i < this.elements.length; i++) {
-                    result.push(this.elements[i][j]);
-                }
-            }
-            return result;
-        }
-
-        //From glUtils.js
-
-    }, {
-        key: "ensure4x4",
-        value: function ensure4x4() {
-            if (this.elements.length == 4 && this.elements[0].length == 4) {
-                return this;
-            }
-
-            if (this.elements.length > 4 || this.elements[0].length > 4) {
-                return null;
-            }
-
-            for (var i = 0; i < this.elements.length; i++) {
-                for (var j = this.elements[i].length; j < 4; j++) {
-                    if (i == j) {
-                        this.elements[i].push(1);
-                    } else {
-                        this.elements[i].push(0);
-                    }
-                }
-            }
-
-            for (var i = this.elements.length; i < 4; i++) {
-                if (i == 0) {
-                    this.elements.push([1, 0, 0, 0]);
-                } else if (i == 1) {
-                    this.elements.push([0, 1, 0, 0]);
-                } else if (i == 2) {
-                    this.elements.push([0, 0, 1, 0]);
-                } else if (i == 3) {
-                    this.elements.push([0, 0, 0, 1]);
-                }
-            }
-
-            return this;
-        }
-
-        //From glUtils.js
-
-    }, {
-        key: "make3x3",
-        value: function make3x3() {
-            if (this.elements.length != 4 || this.elements[0].length != 4) {
-                return null;
-            }
-
-            return new Matrix([[this.elements[0][0], this.elements[0][1], this.elements[0][2]], [this.elements[1][0], this.elements[1][1], this.elements[1][2]], [this.elements[2][0], this.elements[2][1], this.elements[2][2]]]);
-        }
-    }]);
-    return Matrix;
-}();
-
-Matrix.I = function (n) {
-    var els = [],
-        i = n,
-        j;
+    return this.elements[i - 1][j - 1];
+  }
+  row(i) {
+    if (i > this.elements.length) {
+      return null;
+    }
+    return new Vector(this.elements[i - 1]);
+  }
+  col(j) {
+    if (this.elements.length === 0) {
+      return null;
+    }
+    if (j > this.elements[0].length) {
+      return null;
+    }
+    var col = [],
+      n = this.elements.length;
+    for (var i = 0; i < n; i++) {
+      col.push(this.elements[i][j - 1]);
+    }
+    return new Vector(col);
+  }
+  dimensions() {
+    var cols = this.elements.length === 0 ? 0 : this.elements[0].length;
+    return {
+      rows: this.elements.length,
+      cols: cols
+    };
+  }
+  rows() {
+    return this.elements.length;
+  }
+  cols() {
+    if (this.elements.length === 0) {
+      return 0;
+    }
+    return this.elements[0].length;
+  }
+  eql(matrix) {
+    var M = matrix.elements || matrix;
+    if (!M[0] || typeof M[0][0] === 'undefined') {
+      M = new Matrix(M).elements;
+    }
+    if (this.elements.length === 0 || M.length === 0) {
+      return this.elements.length === M.length;
+    }
+    if (this.elements.length !== M.length) {
+      return false;
+    }
+    if (this.elements[0].length !== M[0].length) {
+      return false;
+    }
+    var i = this.elements.length,
+      nj = this.elements[0].length,
+      j;
     while (i--) {
-        j = n;
-        els[i] = [];
-        while (j--) {
-            els[i][j] = i === j ? 1 : 0;
+      j = nj;
+      while (j--) {
+        if (Math.abs(this.elements[i][j] - M[i][j]) > PRECISION) {
+          return false;
         }
+      }
+    }
+    return true;
+  }
+  dup() {
+    return new Matrix(this.elements);
+  }
+  map(fn, context) {
+    if (this.elements.length === 0) {
+      return new Matrix([]);
+    }
+    var els = [],
+      i = this.elements.length,
+      nj = this.elements[0].length,
+      j;
+    while (i--) {
+      j = nj;
+      els[i] = [];
+      while (j--) {
+        els[i][j] = fn.call(context, this.elements[i][j], i + 1, j + 1);
+      }
     }
     return new Matrix(els);
-};
-
-Matrix.Diagonal = function (elements) {
-    var i = elements.length;
-    var M = Matrix.I(i);
+  }
+  isSameSizeAs(matrix) {
+    var M = matrix.elements || matrix;
+    if (typeof M[0][0] === 'undefined') {
+      M = new Matrix(M).elements;
+    }
+    if (this.elements.length === 0) {
+      return M.length === 0;
+    }
+    return this.elements.length === M.length && this.elements[0].length === M[0].length;
+  }
+  add(matrix) {
+    if (this.elements.length === 0) {
+      return this.map(function (x) {
+        return x;
+      });
+    }
+    var M = matrix.elements || matrix;
+    if (typeof M[0][0] === 'undefined') {
+      M = new Matrix(M).elements;
+    }
+    if (!this.isSameSizeAs(M)) {
+      return null;
+    }
+    return this.map(function (x, i, j) {
+      return x + M[i - 1][j - 1];
+    });
+  }
+  subtract(matrix) {
+    if (this.elements.length === 0) {
+      return this.map(function (x) {
+        return x;
+      });
+    }
+    var M = matrix.elements || matrix;
+    if (typeof M[0][0] === 'undefined') {
+      M = new Matrix(M).elements;
+    }
+    if (!this.isSameSizeAs(M)) {
+      return null;
+    }
+    return this.map(function (x, i, j) {
+      return x - M[i - 1][j - 1];
+    });
+  }
+  canMultiplyFromLeft(matrix) {
+    if (this.elements.length === 0) {
+      return false;
+    }
+    var M = matrix.elements || matrix;
+    if (typeof M[0][0] === 'undefined') {
+      M = new Matrix(M).elements;
+    }
+    // this.columns should equal matrix.rows
+    return this.elements[0].length === M.length;
+  }
+  multiply(matrix) {
+    if (this.elements.length === 0) {
+      return null;
+    }
+    if (!matrix.elements) {
+      return this.map(function (x) {
+        return x * matrix;
+      });
+    }
+    var returnVector = matrix.modulus ? true : false;
+    var M = matrix.elements || matrix;
+    if (typeof M[0][0] === 'undefined') {
+      M = new Matrix(M).elements;
+    }
+    if (!this.canMultiplyFromLeft(M)) {
+      return null;
+    }
+    var i = this.elements.length,
+      nj = M[0].length,
+      j;
+    var cols = this.elements[0].length,
+      c,
+      elements = [],
+      sum;
     while (i--) {
-        M.elements[i][i] = elements[i];
+      j = nj;
+      elements[i] = [];
+      while (j--) {
+        c = cols;
+        sum = 0;
+        while (c--) {
+          sum += this.elements[i][c] * M[c][j];
+        }
+        elements[i][j] = sum;
+      }
+    }
+    var M = new Matrix(elements);
+    return returnVector ? M.col(1) : M;
+  }
+  minor(a, b, c, d) {
+    if (this.elements.length === 0) {
+      return null;
+    }
+    var elements = [],
+      ni = c,
+      i,
+      nj,
+      j;
+    var rows = this.elements.length,
+      cols = this.elements[0].length;
+    while (ni--) {
+      i = c - ni - 1;
+      elements[i] = [];
+      nj = d;
+      while (nj--) {
+        j = d - nj - 1;
+        elements[i][j] = this.elements[(a + i - 1) % rows][(b + j - 1) % cols];
+      }
+    }
+    return new Matrix(elements);
+  }
+  transpose() {
+    if (this.elements.length === 0) {
+      return new Matrix([]);
+    }
+    var rows = this.elements.length,
+      i,
+      cols = this.elements[0].length,
+      j;
+    var elements = [],
+      i = cols;
+    while (i--) {
+      j = rows;
+      elements[i] = [];
+      while (j--) {
+        elements[i][j] = this.elements[j][i];
+      }
+    }
+    return new Matrix(elements);
+  }
+  isSquare() {
+    var cols = this.elements.length === 0 ? 0 : this.elements[0].length;
+    return this.elements.length === cols;
+  }
+  max() {
+    if (this.elements.length === 0) {
+      return null;
+    }
+    var m = 0,
+      i = this.elements.length,
+      nj = this.elements[0].length,
+      j;
+    while (i--) {
+      j = nj;
+      while (j--) {
+        if (Math.abs(this.elements[i][j]) > Math.abs(m)) {
+          m = this.elements[i][j];
+        }
+      }
+    }
+    return m;
+  }
+  indexOf(x) {
+    if (this.elements.length === 0) {
+      return null;
+    }
+    var ni = this.elements.length,
+      i,
+      nj = this.elements[0].length,
+      j;
+    for (i = 0; i < ni; i++) {
+      for (j = 0; j < nj; j++) {
+        if (this.elements[i][j] === x) {
+          return {
+            i: i + 1,
+            j: j + 1
+          };
+        }
+      }
+    }
+    return null;
+  }
+  diagonal() {
+    if (!this.isSquare) {
+      return null;
+    }
+    var els = [],
+      n = this.elements.length;
+    for (var i = 0; i < n; i++) {
+      els.push(this.elements[i][i]);
+    }
+    return new Vector(els);
+  }
+  toRightTriangular() {
+    if (this.elements.length === 0) {
+      return new Matrix([]);
+    }
+    var M = this.dup(),
+      els;
+    var n = this.elements.length,
+      i,
+      j,
+      np = this.elements[0].length,
+      p;
+    for (i = 0; i < n; i++) {
+      if (M.elements[i][i] === 0) {
+        for (j = i + 1; j < n; j++) {
+          if (M.elements[j][i] !== 0) {
+            els = [];
+            for (p = 0; p < np; p++) {
+              els.push(M.elements[i][p] + M.elements[j][p]);
+            }
+            M.elements[i] = els;
+            break;
+          }
+        }
+      }
+      if (M.elements[i][i] !== 0) {
+        for (j = i + 1; j < n; j++) {
+          var multiplier = M.elements[j][i] / M.elements[i][i];
+          els = [];
+          for (p = 0; p < np; p++) {
+            // Elements with column numbers up to an including the number of the
+            // row that we're subtracting can safely be set straight to zero,
+            // since that's the point of this routine and it avoids having to
+            // loop over and correct rounding errors later
+            els.push(p <= i ? 0 : M.elements[j][p] - M.elements[i][p] * multiplier);
+          }
+          M.elements[j] = els;
+        }
+      }
     }
     return M;
-};
+  }
+  determinant() {
+    if (this.elements.length === 0) {
+      return 1;
+    }
+    if (!this.isSquare()) {
+      return null;
+    }
+    var M = this.toRightTriangular();
+    var det = M.elements[0][0],
+      n = M.elements.length;
+    for (var i = 1; i < n; i++) {
+      det = det * M.elements[i][i];
+    }
+    return det;
+  }
+  isSingular() {
+    return this.isSquare() && this.determinant() === 0;
+  }
+  trace() {
+    if (this.elements.length === 0) {
+      return 0;
+    }
+    if (!this.isSquare()) {
+      return null;
+    }
+    var tr = this.elements[0][0],
+      n = this.elements.length;
+    for (var i = 1; i < n; i++) {
+      tr += this.elements[i][i];
+    }
+    return tr;
+  }
+  rank() {
+    if (this.elements.length === 0) {
+      return 0;
+    }
+    var M = this.toRightTriangular(),
+      rank = 0;
+    var i = this.elements.length,
+      nj = this.elements[0].length,
+      j;
+    while (i--) {
+      j = nj;
+      while (j--) {
+        if (Math.abs(M.elements[i][j]) > PRECISION) {
+          rank++;
+          break;
+        }
+      }
+    }
+    return rank;
+  }
+  augment(matrix) {
+    if (this.elements.length === 0) {
+      return this.dup();
+    }
+    var M = matrix.elements || matrix;
+    if (typeof M[0][0] === 'undefined') {
+      M = new Matrix(M).elements;
+    }
+    var T = this.dup(),
+      cols = T.elements[0].length;
+    var i = T.elements.length,
+      nj = M[0].length,
+      j;
+    if (i !== M.length) {
+      return null;
+    }
+    while (i--) {
+      j = nj;
+      while (j--) {
+        T.elements[i][cols + j] = M[i][j];
+      }
+    }
+    return T;
+  }
+  inverse() {
+    if (this.elements.length === 0) {
+      return null;
+    }
+    if (!this.isSquare() || this.isSingular()) {
+      return null;
+    }
+    var n = this.elements.length,
+      i = n,
+      j;
+    var M = this.augment(Matrix.I(n)).toRightTriangular();
+    var np = M.elements[0].length,
+      p,
+      els,
+      divisor;
+    var inverse_elements = [],
+      new_element;
+    // Matrix is non-singular so there will be no zeros on the
+    // diagonal. Cycle through rows from last to first.
+    while (i--) {
+      // First, normalise diagonal elements to 1
+      els = [];
+      inverse_elements[i] = [];
+      divisor = M.elements[i][i];
+      for (p = 0; p < np; p++) {
+        new_element = M.elements[i][p] / divisor;
+        els.push(new_element);
+        // Shuffle off the current row of the right hand side into the results
+        // array as it will not be modified by later runs through this loop
+        if (p >= n) {
+          inverse_elements[i].push(new_element);
+        }
+      }
+      M.elements[i] = els;
+      // Then, subtract this row from those above it to give the identity matrix
+      // on the left hand side
+      j = i;
+      while (j--) {
+        els = [];
+        for (p = 0; p < np; p++) {
+          els.push(M.elements[j][p] - M.elements[i][p] * M.elements[j][i]);
+        }
+        M.elements[j] = els;
+      }
+    }
+    return new Matrix(inverse_elements);
+  }
+  round() {
+    return this.map(function (x) {
+      return Math.round(x);
+    });
+  }
+  snapTo(x) {
+    return this.map(function (p) {
+      return Math.abs(p - x) <= PRECISION ? x : p;
+    });
+  }
+  inspect() {
+    var matrix_rows = [];
+    var n = this.elements.length;
+    if (n === 0) return '[]';
+    for (var i = 0; i < n; i++) {
+      matrix_rows.push(new Vector(this.elements[i]).inspect());
+    }
+    return matrix_rows.join('\n');
+  }
+  setElements(els) {
+    var i,
+      j,
+      elements = els.elements || els;
+    if (elements[0] && typeof elements[0][0] !== 'undefined') {
+      i = elements.length;
+      this.elements = [];
+      while (i--) {
+        j = elements[i].length;
+        this.elements[i] = [];
+        while (j--) {
+          this.elements[i][j] = elements[i][j];
+        }
+      }
+      return this;
+    }
+    var n = elements.length;
+    this.elements = [];
+    for (i = 0; i < n; i++) {
+      this.elements.push([elements[i]]);
+    }
+    return this;
+  }
 
+  //From glUtils.js
+  flatten() {
+    var result = [];
+    if (this.elements.length == 0) {
+      return [];
+    }
+    for (var j = 0; j < this.elements[0].length; j++) {
+      for (var i = 0; i < this.elements.length; i++) {
+        result.push(this.elements[i][j]);
+      }
+    }
+    return result;
+  }
+
+  //From glUtils.js
+  ensure4x4() {
+    if (this.elements.length == 4 && this.elements[0].length == 4) {
+      return this;
+    }
+    if (this.elements.length > 4 || this.elements[0].length > 4) {
+      return null;
+    }
+    for (var i = 0; i < this.elements.length; i++) {
+      for (var j = this.elements[i].length; j < 4; j++) {
+        if (i == j) {
+          this.elements[i].push(1);
+        } else {
+          this.elements[i].push(0);
+        }
+      }
+    }
+    for (var i = this.elements.length; i < 4; i++) {
+      if (i == 0) {
+        this.elements.push([1, 0, 0, 0]);
+      } else if (i == 1) {
+        this.elements.push([0, 1, 0, 0]);
+      } else if (i == 2) {
+        this.elements.push([0, 0, 1, 0]);
+      } else if (i == 3) {
+        this.elements.push([0, 0, 0, 1]);
+      }
+    }
+    return this;
+  }
+
+  //From glUtils.js
+  make3x3() {
+    if (this.elements.length != 4 || this.elements[0].length != 4) {
+      return null;
+    }
+    return new Matrix([[this.elements[0][0], this.elements[0][1], this.elements[0][2]], [this.elements[1][0], this.elements[1][1], this.elements[1][2]], [this.elements[2][0], this.elements[2][1], this.elements[2][2]]]);
+  }
+}
+Matrix.I = function (n) {
+  var els = [],
+    i = n,
+    j;
+  while (i--) {
+    j = n;
+    els[i] = [];
+    while (j--) {
+      els[i][j] = i === j ? 1 : 0;
+    }
+  }
+  return new Matrix(els);
+};
+Matrix.Diagonal = function (elements) {
+  var i = elements.length;
+  var M = Matrix.I(i);
+  while (i--) {
+    M.elements[i][i] = elements[i];
+  }
+  return M;
+};
 Matrix.Rotation = function (theta, a) {
-    if (!a) {
-        return new Matrix([[Math.cos(theta), -Math.sin(theta)], [Math.sin(theta), Math.cos(theta)]]);
-    }
-    var axis = a.dup();
-    if (axis.elements.length !== 3) {
-        return null;
-    }
-    var mod = axis.modulus();
-    var x = axis.elements[0] / mod,
-        y = axis.elements[1] / mod,
-        z = axis.elements[2] / mod;
-    var s = Math.sin(theta),
-        c = Math.cos(theta),
-        t = 1 - c;
-    // Formula derived here: http://www.gamedev.net/reference/articles/article1199.asp
-    // That proof rotates the co-ordinate system so theta becomes -theta and sin
-    // becomes -sin here.
-    return new Matrix([[t * x * x + c, t * x * y - s * z, t * x * z + s * y], [t * x * y + s * z, t * y * y + c, t * y * z - s * x], [t * x * z - s * y, t * y * z + s * x, t * z * z + c]]);
+  if (!a) {
+    return new Matrix([[Math.cos(theta), -Math.sin(theta)], [Math.sin(theta), Math.cos(theta)]]);
+  }
+  var axis = a.dup();
+  if (axis.elements.length !== 3) {
+    return null;
+  }
+  var mod = axis.modulus();
+  var x = axis.elements[0] / mod,
+    y = axis.elements[1] / mod,
+    z = axis.elements[2] / mod;
+  var s = Math.sin(theta),
+    c = Math.cos(theta),
+    t = 1 - c;
+  // Formula derived here: http://www.gamedev.net/reference/articles/article1199.asp
+  // That proof rotates the co-ordinate system so theta becomes -theta and sin
+  // becomes -sin here.
+  return new Matrix([[t * x * x + c, t * x * y - s * z, t * x * z + s * y], [t * x * y + s * z, t * y * y + c, t * y * z - s * x], [t * x * z - s * y, t * y * z + s * x, t * z * z + c]]);
 };
-
 Matrix.RotationX = function (t) {
-    var c = Math.cos(t),
-        s = Math.sin(t);
-    return new Matrix([[1, 0, 0], [0, c, -s], [0, s, c]]);
+  var c = Math.cos(t),
+    s = Math.sin(t);
+  return new Matrix([[1, 0, 0], [0, c, -s], [0, s, c]]);
 };
 Matrix.RotationY = function (t) {
-    var c = Math.cos(t),
-        s = Math.sin(t);
-    return new Matrix([[c, 0, s], [0, 1, 0], [-s, 0, c]]);
+  var c = Math.cos(t),
+    s = Math.sin(t);
+  return new Matrix([[c, 0, s], [0, 1, 0], [-s, 0, c]]);
 };
 Matrix.RotationZ = function (t) {
-    var c = Math.cos(t),
-        s = Math.sin(t);
-    return new Matrix([[c, -s, 0], [s, c, 0], [0, 0, 1]]);
+  var c = Math.cos(t),
+    s = Math.sin(t);
+  return new Matrix([[c, -s, 0], [s, c, 0], [0, 0, 1]]);
 };
-
 Matrix.Random = function (n, m) {
-    return Matrix.Zero(n, m).map(function () {
-        return Math.random();
-    });
+  return Matrix.Zero(n, m).map(function () {
+    return Math.random();
+  });
 };
 
 //From glUtils.js
 Matrix.Translation = function (v) {
-    if (v.elements.length == 2) {
-        var r = Matrix.I(3);
-        r.elements[2][0] = v.elements[0];
-        r.elements[2][1] = v.elements[1];
-        return r;
-    }
-
-    if (v.elements.length == 3) {
-        var r = Matrix.I(4);
-        r.elements[0][3] = v.elements[0];
-        r.elements[1][3] = v.elements[1];
-        r.elements[2][3] = v.elements[2];
-        return r;
-    }
-
-    throw "Invalid length for Translation";
+  if (v.elements.length == 2) {
+    var r = Matrix.I(3);
+    r.elements[2][0] = v.elements[0];
+    r.elements[2][1] = v.elements[1];
+    return r;
+  }
+  if (v.elements.length == 3) {
+    var r = Matrix.I(4);
+    r.elements[0][3] = v.elements[0];
+    r.elements[1][3] = v.elements[1];
+    r.elements[2][3] = v.elements[2];
+    return r;
+  }
+  throw "Invalid length for Translation";
 };
-
 Matrix.Zero = function (n, m) {
-    var els = [],
-        i = n,
-        j;
-    while (i--) {
-        j = m;
-        els[i] = [];
-        while (j--) {
-            els[i][j] = 0;
-        }
+  var els = [],
+    i = n,
+    j;
+  while (i--) {
+    j = m;
+    els[i] = [];
+    while (j--) {
+      els[i][j] = 0;
     }
-    return new Matrix(els);
+  }
+  return new Matrix(els);
 };
-
 Matrix.prototype.toUpperTriangular = Matrix.prototype.toRightTriangular;
 Matrix.prototype.det = Matrix.prototype.determinant;
 Matrix.prototype.tr = Matrix.prototype.trace;
@@ -3267,384 +2980,310 @@ Matrix.prototype.rk = Matrix.prototype.rank;
 Matrix.prototype.inv = Matrix.prototype.inverse;
 Matrix.prototype.x = Matrix.prototype.multiply;
 
-var Vector = function () {
-    function Vector(elements) {
-        classCallCheck(this, Vector);
-
-        this.setElements(elements);
+class Vector {
+  constructor(elements) {
+    this.setElements(elements);
+  }
+  e(i) {
+    return i < 1 || i > this.elements.length ? null : this.elements[i - 1];
+  }
+  dimensions() {
+    return this.elements.length;
+  }
+  modulus() {
+    return Math.sqrt(this.dot(this));
+  }
+  eql(vector) {
+    var n = this.elements.length;
+    var V = vector.elements || vector;
+    if (n !== V.length) {
+      return false;
     }
+    while (n--) {
+      if (Math.abs(this.elements[n] - V[n]) > PRECISION) {
+        return false;
+      }
+    }
+    return true;
+  }
+  dup() {
+    return new Vector(this.elements);
+  }
+  map(fn, context) {
+    var elements = [];
+    this.each(function (x, i) {
+      elements.push(fn.call(context, x, i));
+    });
+    return new Vector(elements);
+  }
+  forEach(fn, context) {
+    var n = this.elements.length;
+    for (var i = 0; i < n; i++) {
+      fn.call(context, this.elements[i], i + 1);
+    }
+  }
+  toUnitVector() {
+    var r = this.modulus();
+    if (r === 0) {
+      return this.dup();
+    }
+    return this.map(function (x) {
+      return x / r;
+    });
+  }
+  angleFrom(vector) {
+    var V = vector.elements || vector;
+    var n = this.elements.length;
+    if (n !== V.length) {
+      return null;
+    }
+    var dot = 0,
+      mod1 = 0,
+      mod2 = 0;
+    // Work things out in parallel to save time
+    this.each(function (x, i) {
+      dot += x * V[i - 1];
+      mod1 += x * x;
+      mod2 += V[i - 1] * V[i - 1];
+    });
+    mod1 = Math.sqrt(mod1);
+    mod2 = Math.sqrt(mod2);
+    if (mod1 * mod2 === 0) {
+      return null;
+    }
+    var theta = dot / (mod1 * mod2);
+    if (theta < -1) {
+      theta = -1;
+    }
+    if (theta > 1) {
+      theta = 1;
+    }
+    return Math.acos(theta);
+  }
+  isParallelTo(vector) {
+    var angle = this.angleFrom(vector);
+    return angle === null ? null : angle <= PRECISION;
+  }
+  isAntiparallelTo(vector) {
+    var angle = this.angleFrom(vector);
+    return angle === null ? null : Math.abs(angle - Math.PI) <= PRECISION;
+  }
+  isPerpendicularTo(vector) {
+    var dot = this.dot(vector);
+    return dot === null ? null : Math.abs(dot) <= PRECISION;
+  }
+  add(vector) {
+    var V = vector.elements || vector;
+    if (this.elements.length !== V.length) {
+      return null;
+    }
+    return this.map(function (x, i) {
+      return x + V[i - 1];
+    });
+  }
+  subtract(vector) {
+    var V = vector.elements || vector;
+    if (this.elements.length !== V.length) {
+      return null;
+    }
+    return this.map(function (x, i) {
+      return x - V[i - 1];
+    });
+  }
+  multiply(k) {
+    return this.map(function (x) {
+      return x * k;
+    });
+  }
+  dot(vector) {
+    var V = vector.elements || vector;
+    var product = 0,
+      n = this.elements.length;
+    if (n !== V.length) {
+      return null;
+    }
+    while (n--) {
+      product += this.elements[n] * V[n];
+    }
+    return product;
+  }
+  cross(vector) {
+    var B = vector.elements || vector;
+    if (this.elements.length !== 3 || B.length !== 3) {
+      return null;
+    }
+    var A = this.elements;
+    return new Vector([A[1] * B[2] - A[2] * B[1], A[2] * B[0] - A[0] * B[2], A[0] * B[1] - A[1] * B[0]]);
+  }
+  max() {
+    var m = 0,
+      i = this.elements.length;
+    while (i--) {
+      if (Math.abs(this.elements[i]) > Math.abs(m)) {
+        m = this.elements[i];
+      }
+    }
+    return m;
+  }
+  indexOf(x) {
+    var index = null,
+      n = this.elements.length;
+    for (var i = 0; i < n; i++) {
+      if (index === null && this.elements[i] === x) {
+        index = i + 1;
+      }
+    }
+    return index;
+  }
+  toDiagonalMatrix() {
+    return Matrix.Diagonal(this.elements);
+  }
+  round() {
+    return this.map(function (x) {
+      return Math.round(x);
+    });
+  }
+  snapTo(x) {
+    return this.map(function (y) {
+      return Math.abs(y - x) <= PRECISION ? x : y;
+    });
+  }
+  distanceFrom(obj) {
+    if (obj.anchor || obj.start && obj.end) {
+      return obj.distanceFrom(this);
+    }
+    var V = obj.elements || obj;
+    if (V.length !== this.elements.length) {
+      return null;
+    }
+    var sum = 0,
+      part;
+    this.each(function (x, i) {
+      part = x - V[i - 1];
+      sum += part * part;
+    });
+    return Math.sqrt(sum);
+  }
+  liesOn(line) {
+    return line.contains(this);
+  }
+  liesIn(plane) {
+    return plane.contains(this);
+  }
+  rotate(t, obj) {
+    var V,
+      R = null,
+      x,
+      y,
+      z;
+    if (t.determinant) {
+      R = t.elements;
+    }
+    switch (this.elements.length) {
+      case 2:
+        {
+          V = obj.elements || obj;
+          if (V.length !== 2) {
+            return null;
+          }
+          if (!R) {
+            R = Matrix.Rotation(t).elements;
+          }
+          x = this.elements[0] - V[0];
+          y = this.elements[1] - V[1];
+          return new Vector([V[0] + R[0][0] * x + R[0][1] * y, V[1] + R[1][0] * x + R[1][1] * y]);
+        }
+      case 3:
+        {
+          if (!obj.direction) {
+            return null;
+          }
+          var C = obj.pointClosestTo(this).elements;
+          if (!R) {
+            R = Matrix.Rotation(t, obj.direction).elements;
+          }
+          x = this.elements[0] - C[0];
+          y = this.elements[1] - C[1];
+          z = this.elements[2] - C[2];
+          return new Vector([C[0] + R[0][0] * x + R[0][1] * y + R[0][2] * z, C[1] + R[1][0] * x + R[1][1] * y + R[1][2] * z, C[2] + R[2][0] * x + R[2][1] * y + R[2][2] * z]);
+        }
+      default:
+        {
+          return null;
+        }
+    }
+  }
+  reflectionIn(obj) {
+    if (obj.anchor) {
+      // obj is a plane or line
+      var P = this.elements.slice();
+      var C = obj.pointClosestTo(P).elements;
+      return new Vector([C[0] + (C[0] - P[0]), C[1] + (C[1] - P[1]), C[2] + (C[2] - (P[2] || 0))]);
+    } else {
+      // obj is a point
+      var Q = obj.elements || obj;
+      if (this.elements.length !== Q.length) {
+        return null;
+      }
+      return this.map(function (x, i) {
+        return Q[i - 1] + (Q[i - 1] - x);
+      });
+    }
+  }
+  to3D() {
+    var V = this.dup();
+    switch (V.elements.length) {
+      case 3:
+        {
+          break;
+        }
+      case 2:
+        {
+          V.elements.push(0);
+          break;
+        }
+      default:
+        {
+          return null;
+        }
+    }
+    return V;
+  }
+  inspect() {
+    return '[' + this.elements.join(', ') + ']';
+  }
+  setElements(els) {
+    this.elements = (els.elements || els).slice();
+    return this;
+  }
 
-    createClass(Vector, [{
-        key: "e",
-        value: function e(i) {
-            return i < 1 || i > this.elements.length ? null : this.elements[i - 1];
-        }
-    }, {
-        key: "dimensions",
-        value: function dimensions() {
-            return this.elements.length;
-        }
-    }, {
-        key: "modulus",
-        value: function modulus() {
-            return Math.sqrt(this.dot(this));
-        }
-    }, {
-        key: "eql",
-        value: function eql(vector) {
-            var n = this.elements.length;
-            var V = vector.elements || vector;
-            if (n !== V.length) {
-                return false;
-            }
-            while (n--) {
-                if (Math.abs(this.elements[n] - V[n]) > PRECISION) {
-                    return false;
-                }
-            }
-            return true;
-        }
-    }, {
-        key: "dup",
-        value: function dup() {
-            return new Vector(this.elements);
-        }
-    }, {
-        key: "map",
-        value: function map(fn, context) {
-            var elements = [];
-            this.each(function (x, i) {
-                elements.push(fn.call(context, x, i));
-            });
-            return new Vector(elements);
-        }
-    }, {
-        key: "forEach",
-        value: function forEach(fn, context) {
-            var n = this.elements.length;
-            for (var i = 0; i < n; i++) {
-                fn.call(context, this.elements[i], i + 1);
-            }
-        }
-    }, {
-        key: "toUnitVector",
-        value: function toUnitVector() {
-            var r = this.modulus();
-            if (r === 0) {
-                return this.dup();
-            }
-            return this.map(function (x) {
-                return x / r;
-            });
-        }
-    }, {
-        key: "angleFrom",
-        value: function angleFrom(vector) {
-            var V = vector.elements || vector;
-            var n = this.elements.length;
-            if (n !== V.length) {
-                return null;
-            }
-            var dot = 0,
-                mod1 = 0,
-                mod2 = 0;
-            // Work things out in parallel to save time
-            this.each(function (x, i) {
-                dot += x * V[i - 1];
-                mod1 += x * x;
-                mod2 += V[i - 1] * V[i - 1];
-            });
-            mod1 = Math.sqrt(mod1);mod2 = Math.sqrt(mod2);
-            if (mod1 * mod2 === 0) {
-                return null;
-            }
-            var theta = dot / (mod1 * mod2);
-            if (theta < -1) {
-                theta = -1;
-            }
-            if (theta > 1) {
-                theta = 1;
-            }
-            return Math.acos(theta);
-        }
-    }, {
-        key: "isParallelTo",
-        value: function isParallelTo(vector) {
-            var angle = this.angleFrom(vector);
-            return angle === null ? null : angle <= PRECISION;
-        }
-    }, {
-        key: "isAntiparallelTo",
-        value: function isAntiparallelTo(vector) {
-            var angle = this.angleFrom(vector);
-            return angle === null ? null : Math.abs(angle - Math.PI) <= PRECISION;
-        }
-    }, {
-        key: "isPerpendicularTo",
-        value: function isPerpendicularTo(vector) {
-            var dot = this.dot(vector);
-            return dot === null ? null : Math.abs(dot) <= PRECISION;
-        }
-    }, {
-        key: "add",
-        value: function add(vector) {
-            var V = vector.elements || vector;
-            if (this.elements.length !== V.length) {
-                return null;
-            }
-            return this.map(function (x, i) {
-                return x + V[i - 1];
-            });
-        }
-    }, {
-        key: "subtract",
-        value: function subtract(vector) {
-            var V = vector.elements || vector;
-            if (this.elements.length !== V.length) {
-                return null;
-            }
-            return this.map(function (x, i) {
-                return x - V[i - 1];
-            });
-        }
-    }, {
-        key: "multiply",
-        value: function multiply(k) {
-            return this.map(function (x) {
-                return x * k;
-            });
-        }
-    }, {
-        key: "dot",
-        value: function dot(vector) {
-            var V = vector.elements || vector;
-            var product = 0,
-                n = this.elements.length;
-            if (n !== V.length) {
-                return null;
-            }
-            while (n--) {
-                product += this.elements[n] * V[n];
-            }
-            return product;
-        }
-    }, {
-        key: "cross",
-        value: function cross(vector) {
-            var B = vector.elements || vector;
-            if (this.elements.length !== 3 || B.length !== 3) {
-                return null;
-            }
-            var A = this.elements;
-            return new Vector([A[1] * B[2] - A[2] * B[1], A[2] * B[0] - A[0] * B[2], A[0] * B[1] - A[1] * B[0]]);
-        }
-    }, {
-        key: "max",
-        value: function max() {
-            var m = 0,
-                i = this.elements.length;
-            while (i--) {
-                if (Math.abs(this.elements[i]) > Math.abs(m)) {
-                    m = this.elements[i];
-                }
-            }
-            return m;
-        }
-    }, {
-        key: "indexOf",
-        value: function indexOf(x) {
-            var index = null,
-                n = this.elements.length;
-            for (var i = 0; i < n; i++) {
-                if (index === null && this.elements[i] === x) {
-                    index = i + 1;
-                }
-            }
-            return index;
-        }
-    }, {
-        key: "toDiagonalMatrix",
-        value: function toDiagonalMatrix() {
-            return Matrix.Diagonal(this.elements);
-        }
-    }, {
-        key: "round",
-        value: function round() {
-            return this.map(function (x) {
-                return Math.round(x);
-            });
-        }
-    }, {
-        key: "snapTo",
-        value: function snapTo(x) {
-            return this.map(function (y) {
-                return Math.abs(y - x) <= PRECISION ? x : y;
-            });
-        }
-    }, {
-        key: "distanceFrom",
-        value: function distanceFrom(obj) {
-            if (obj.anchor || obj.start && obj.end) {
-                return obj.distanceFrom(this);
-            }
-            var V = obj.elements || obj;
-            if (V.length !== this.elements.length) {
-                return null;
-            }
-            var sum = 0,
-                part;
-            this.each(function (x, i) {
-                part = x - V[i - 1];
-                sum += part * part;
-            });
-            return Math.sqrt(sum);
-        }
-    }, {
-        key: "liesOn",
-        value: function liesOn(line) {
-            return line.contains(this);
-        }
-    }, {
-        key: "liesIn",
-        value: function liesIn(plane) {
-            return plane.contains(this);
-        }
-    }, {
-        key: "rotate",
-        value: function rotate(t, obj) {
-            var V,
-                R = null,
-                x,
-                y,
-                z;
-            if (t.determinant) {
-                R = t.elements;
-            }
-            switch (this.elements.length) {
-                case 2:
-                    {
-                        V = obj.elements || obj;
-                        if (V.length !== 2) {
-                            return null;
-                        }
-                        if (!R) {
-                            R = Matrix.Rotation(t).elements;
-                        }
-                        x = this.elements[0] - V[0];
-                        y = this.elements[1] - V[1];
-                        return new Vector([V[0] + R[0][0] * x + R[0][1] * y, V[1] + R[1][0] * x + R[1][1] * y]);
-                        break;
-                    }
-                case 3:
-                    {
-                        if (!obj.direction) {
-                            return null;
-                        }
-                        var C = obj.pointClosestTo(this).elements;
-                        if (!R) {
-                            R = Matrix.Rotation(t, obj.direction).elements;
-                        }
-                        x = this.elements[0] - C[0];
-                        y = this.elements[1] - C[1];
-                        z = this.elements[2] - C[2];
-                        return new Vector([C[0] + R[0][0] * x + R[0][1] * y + R[0][2] * z, C[1] + R[1][0] * x + R[1][1] * y + R[1][2] * z, C[2] + R[2][0] * x + R[2][1] * y + R[2][2] * z]);
-                        break;
-                    }
-                default:
-                    {
-                        return null;
-                    }
-            }
-        }
-    }, {
-        key: "reflectionIn",
-        value: function reflectionIn(obj) {
-            if (obj.anchor) {
-                // obj is a plane or line
-                var P = this.elements.slice();
-                var C = obj.pointClosestTo(P).elements;
-                return new Vector([C[0] + (C[0] - P[0]), C[1] + (C[1] - P[1]), C[2] + (C[2] - (P[2] || 0))]);
-            } else {
-                // obj is a point
-                var Q = obj.elements || obj;
-                if (this.elements.length !== Q.length) {
-                    return null;
-                }
-                return this.map(function (x, i) {
-                    return Q[i - 1] + (Q[i - 1] - x);
-                });
-            }
-        }
-    }, {
-        key: "to3D",
-        value: function to3D() {
-            var V = this.dup();
-            switch (V.elements.length) {
-                case 3:
-                    {
-                        break;
-                    }
-                case 2:
-                    {
-                        V.elements.push(0);
-                        break;
-                    }
-                default:
-                    {
-                        return null;
-                    }
-            }
-            return V;
-        }
-    }, {
-        key: "inspect",
-        value: function inspect() {
-            return '[' + this.elements.join(', ') + ']';
-        }
-    }, {
-        key: "setElements",
-        value: function setElements(els) {
-            this.elements = (els.elements || els).slice();
-            return this;
-        }
-
-        //From glUtils.js
-
-    }, {
-        key: "flatten",
-        value: function flatten() {
-            return this.elements;
-        }
-    }]);
-    return Vector;
-}();
-
+  //From glUtils.js
+  flatten() {
+    return this.elements;
+  }
+}
 Vector.Random = function (n) {
-    var elements = [];
-    while (n--) {
-        elements.push(Math.random());
-    }
-    return new Vector(elements);
+  var elements = [];
+  while (n--) {
+    elements.push(Math.random());
+  }
+  return new Vector(elements);
 };
-
 Vector.Zero = function (n) {
-    var elements = [];
-    while (n--) {
-        elements.push(0);
-    }
-    return new Vector(elements);
+  var elements = [];
+  while (n--) {
+    elements.push(0);
+  }
+  return new Vector(elements);
 };
-
 Vector.prototype.x = Vector.prototype.multiply;
 Vector.prototype.each = Vector.prototype.forEach;
-
 Vector.i = new Vector([1, 0, 0]);
 Vector.j = new Vector([0, 1, 0]);
 Vector.k = new Vector([0, 0, 1]);
 
 var computeCentroids = function computeCentroids(config, position, row) {
   var centroids = [];
-
   var p = Object.keys(config.dimensions);
   var cols = p.length;
   var a = 0.5; // center between axes
@@ -3667,7 +3306,6 @@ var computeCentroids = function computeCentroids(config, position, row) {
       centroids.push(new Vector([cx, cy]));
     }
   }
-
   return centroids;
 };
 
@@ -3675,34 +3313,27 @@ var computeControlPoints = function computeControlPoints(smoothness, centroids) 
   var cols = centroids.length;
   var a = smoothness;
   var cps = [];
-
   cps.push(centroids[0]);
   cps.push(new Vector([centroids[0].e(1) + a * 2 * (centroids[1].e(1) - centroids[0].e(1)), centroids[0].e(2)]));
   for (var col = 1; col < cols - 1; ++col) {
     var mid = centroids[col];
     var left = centroids[col - 1];
     var right = centroids[col + 1];
-
     var diff = left.subtract(right);
     cps.push(mid.add(diff.x(a)));
     cps.push(mid);
     cps.push(mid.subtract(diff.x(a)));
   }
-
   cps.push(new Vector([centroids[cols - 1].e(1) + a * 2 * (centroids[cols - 2].e(1) - centroids[cols - 1].e(1)), centroids[cols - 1].e(2)]));
   cps.push(centroids[cols - 1]);
-
   return cps;
 };
 
 // draw single cubic bezier curve
-
 var singleCurve = function singleCurve(config, position, d, ctx) {
   var centroids = computeCentroids(config, position, d);
   var cps = computeControlPoints(config.smoothness, centroids);
-
   ctx.moveTo(cps[0].e(1), cps[0].e(2));
-
   for (var i = 1; i < cps.length; i += 3) {
     if (config.showControlPoints) {
       for (var j = 0; j < 3; j++) {
@@ -3724,7 +3355,6 @@ var getNullPosition = function getNullPosition(config) {
   }
   return h(config) + 1;
 };
-
 var singlePath = function singlePath(config, position, d, ctx) {
   Object.keys(config.dimensions).map(function (p) {
     return [position(p), d[p] === undefined ? getNullPosition(config) : config.dimensions[p].yscale(d[p])];
@@ -3758,17 +3388,14 @@ var pathMark = function pathMark(config, ctx, position) {
     return colorPath(config, position, d, ctx.marked);
   };
 };
-
 var renderMarkedDefault = function renderMarkedDefault(config, pc, ctx, position) {
   return function () {
     pc.clear('marked');
-
     if (config.marked.length) {
       config.marked.forEach(pathMark(config, ctx, position));
     }
   };
 };
-
 var renderMarkedQueue = function renderMarkedQueue(config, markedQueue) {
   return function () {
     if (config.marked) {
@@ -3778,11 +3405,9 @@ var renderMarkedQueue = function renderMarkedQueue(config, markedQueue) {
     }
   };
 };
-
 var renderMarked = function renderMarked(config, pc, events) {
   return function () {
     if (!Object.keys(config.dimensions).length) pc.detectDimensions();
-
     pc.renderMarked[config.mode]();
     events.call('render', this);
     return this;
@@ -3799,17 +3424,14 @@ var pathBrushed = function pathBrushed(config, ctx, position) {
     return colorPath(config, position, d, ctx.brushed);
   };
 };
-
 var renderBrushedDefault = function renderBrushedDefault(config, ctx, position, pc, brushGroup) {
   return function () {
     pc.clear('brushed');
-
     if (isBrushed(config, brushGroup) && config.brushed !== false) {
       config.brushed.forEach(pathBrushed(config, ctx, position));
     }
   };
 };
-
 var renderBrushedQueue = function renderBrushedQueue(config, brushGroup, brushedQueue) {
   return function () {
     if (isBrushed(config, brushGroup)) {
@@ -3819,18 +3441,16 @@ var renderBrushedQueue = function renderBrushedQueue(config, brushGroup, brushed
     }
   };
 };
-
 var renderBrushed = function renderBrushed(config, pc, events) {
   return function () {
     if (!Object.keys(config.dimensions).length) pc.detectDimensions();
-
     pc.renderBrushed[config.mode]();
     events.call('render', this);
     return this;
   };
 };
 
-var brushReset$4 = function brushReset(config, pc) {
+var brushReset = function brushReset(config, pc) {
   return function (dimension) {
     var brushesToKeep = [];
     for (var j = 0; j < config.brushes.length; j++) {
@@ -3838,10 +3458,8 @@ var brushReset$4 = function brushReset(config, pc) {
         brushesToKeep.push(config.brushes[j]);
       }
     }
-
     config.brushes = brushesToKeep;
     config.brushed = false;
-
     if (pc.g() !== undefined) {
       var nodes = pc.g().selectAll('.brush').nodes();
       for (var i = 0; i < nodes.length; i++) {
@@ -3852,7 +3470,6 @@ var brushReset$4 = function brushReset(config, pc) {
         }
       }
     }
-
     return this;
   };
 };
@@ -3889,11 +3506,9 @@ var pathHighlight = function pathHighlight(config, ctx, position) {
 var highlight = function highlight(config, pc, canvas, events, ctx, position) {
   return function () {
     var data = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : null;
-
     if (data === null) {
       return config.highlighted;
     }
-
     config.highlighted = data;
     pc.clear('highlight');
     selectAll([canvas.foreground, canvas.brushed]).classed('faded', true);
@@ -3917,7 +3532,6 @@ var unhighlight = function unhighlight(config, pc, canvas) {
 var mark = function mark(config, pc, canvas, events, ctx, position) {
   return function () {
     var data = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : null;
-
     if (data === null) {
       return config.marked;
     }
@@ -3944,7 +3558,6 @@ var unmark = function unmark(config, pc, canvas) {
 var removeAxes = function removeAxes(pc) {
   return function () {
     pc._g.remove();
-
     delete pc._g;
     return this;
   };
@@ -3968,9 +3581,7 @@ var render = function render(config, pc, events) {
       pc.detectDimensions();
     }
     pc.autoscale();
-
     pc.render[config.mode]();
-
     events.call('render', this);
     return this;
   };
@@ -3982,19 +3593,15 @@ var pathForeground = function pathForeground(config, ctx, position) {
     return colorPath(config, position, d, ctx.foreground);
   };
 };
-
 var renderDefault = function renderDefault(config, pc, ctx, position) {
   return function () {
     pc.clear('foreground');
     pc.clear('highlight');
-
-    pc.renderBrushed.default();
-    pc.renderMarked.default();
-
+    pc.renderBrushed["default"]();
+    pc.renderMarked["default"]();
     config.data.forEach(pathForeground(config, ctx, position));
   };
 };
-
 var renderDefaultQueue = function renderDefaultQueue(config, pc, foregroundQueue) {
   return function () {
     pc.renderBrushed.queue();
@@ -4013,7 +3620,6 @@ var detectDimensionTypes = function detectDimensionTypes(data) {
   return Object.keys(data[0]).reduce(function (acc, cur) {
     var key = isNaN(Number(cur)) ? cur : parseInt(cur);
     acc[key] = toTypeCoerceNumbers(data[0][cur]);
-
     return acc;
   }, {});
 };
@@ -4057,9 +3663,8 @@ var init = function init(config, canvas, ctx) {
    * @param selection a d3 selection
    * @returns {pc} instance for chained api
    */
-  var pc = function pc(selection) {
-    selection = pc.selection = select(selection);
-
+  var _pc = function pc(selection) {
+    selection = _pc.selection = select(selection);
     config.width = selection.node().clientWidth;
     config.height = selection.node().clientHeight;
     // canvas data layers
@@ -4069,13 +3674,13 @@ var init = function init(config, canvas, ctx) {
     });
 
     // svg tick and brush layers
-    pc.svg = selection.append('svg').attr('width', config.width).attr('height', config.height).style('font', '14px sans-serif').style('position', 'absolute').append('svg:g').attr('transform', 'translate(' + config.margin.left + ',' + config.margin.top + ')');
+    _pc.svg = selection.append('svg').attr('width', config.width).attr('height', config.height).style('font', '14px sans-serif').style('position', 'absolute').append('svg:g').attr('transform', 'translate(' + config.margin.left + ',' + config.margin.top + ')');
     // for chained api
-    return pc;
+    return _pc;
   };
 
   // for partial-application style programming
-  return pc;
+  return _pc;
 };
 
 var flip = function flip(config) {
@@ -4097,14 +3702,13 @@ var detectDimensions = function detectDimensions(pc) {
 var scale = function scale(config, pc) {
   return function (d, domain) {
     config.dimensions[d].yscale.domain(domain);
-    pc.render.default();
+    pc.render["default"]();
     pc.updateAxes();
-
     return this;
   };
 };
 
-var version = "2.2.10";
+const version = "2.2.10";
 
 var DefaultConfig = {
   data: [],
@@ -4125,9 +3729,20 @@ var DefaultConfig = {
   rate: 20,
   width: 600,
   height: 300,
-  margin: { top: 24, right: 20, bottom: 12, left: 20 },
-  nullValueSeparator: 'undefined', // set to "top" or "bottom"
-  nullValueSeparatorPadding: { top: 8, right: 0, bottom: 8, left: 0 },
+  margin: {
+    top: 24,
+    right: 20,
+    bottom: 12,
+    left: 20
+  },
+  nullValueSeparator: 'undefined',
+  // set to "top" or "bottom"
+  nullValueSeparatorPadding: {
+    top: 8,
+    right: 0,
+    bottom: 8,
+    left: 0
+  },
   color: '#069',
   composite: 'source-over',
   alpha: 0.7,
@@ -4137,15 +3752,14 @@ var DefaultConfig = {
   showControlPoints: false,
   hideAxis: [],
   flipAxes: [],
-  animationTime: 1100, // How long it takes to flip the axis when you double click
+  animationTime: 1100,
+  // How long it takes to flip the axis when you double click
   rotateLabels: false
 };
 
-var _this$4 = undefined;
-
+var _this$1 = undefined;
 var initState = function initState(userConfig) {
   var config = Object.assign({}, DefaultConfig, userConfig);
-
   if (userConfig && userConfig.dimensionTitles) {
     console.warn('dimensionTitles passed in userConfig is deprecated. Add title to dimension object.');
     entries(userConfig.dimensionTitles).forEach(function (d) {
@@ -4158,31 +3772,31 @@ var initState = function initState(userConfig) {
       }
     });
   }
-
   var eventTypes = ['render', 'resize', 'highlight', 'mark', 'brush', 'brushend', 'brushstart', 'axesreorder'].concat(keys(config));
-
-  var events = dispatch.apply(_this$4, eventTypes),
-      flags = {
-    brushable: false,
-    reorderable: false,
-    axes: false,
-    interactive: false,
-    debug: false
-  },
-      xscale = scalePoint(),
-      dragging = {},
-      axis = axisLeft().ticks(5),
-      ctx = {},
-      canvas = {};
-
+  var events = dispatch.apply(_this$1, eventTypes),
+    flags = {
+      brushable: false,
+      reorderable: false,
+      axes: false,
+      interactive: false,
+      debug: false
+    },
+    xscale = scalePoint(),
+    dragging = {},
+    axis = axisLeft().ticks(5),
+    ctx = {},
+    canvas = {};
   var brush = {
     modes: {
       None: {
-        install: function install(pc) {}, // Nothing to be done.
-        uninstall: function uninstall(pc) {}, // Nothing to be done.
+        install: function install(pc) {},
+        // Nothing to be done.
+        uninstall: function uninstall(pc) {},
+        // Nothing to be done.
         selected: function selected() {
           return [];
-        }, // Nothing to return
+        },
+        // Nothing to return
         brushState: function brushState() {
           return {};
         }
@@ -4194,7 +3808,6 @@ var initState = function initState(userConfig) {
       return this.modes[this.mode];
     }
   };
-
   return {
     config: config,
     events: events,
@@ -4221,7 +3834,6 @@ var computeClusterCentroids = function computeClusterCentroids(config, d) {
     var count = clusterCounts.get(scaled);
     clusterCounts.set(scaled, count + 1);
   });
-
   config.data.forEach(function (row) {
     Object.keys(config.dimensions).map(function (p) {
       var scaled = config.dimensions[d].yscale(row[d]);
@@ -4237,21 +3849,18 @@ var computeClusterCentroids = function computeClusterCentroids(config, d) {
       clusterCentroids.get(scaled).set(p, value);
     });
   });
-
   return clusterCentroids;
 };
 
-var _this$5 = undefined;
-
+var _this = undefined;
 var without = function without(arr, items) {
   items.forEach(function (el) {
     delete arr[el];
   });
   return arr;
 };
-
 var sideEffects = function sideEffects(config, ctx, pc, xscale, axis, flags, brushedQueue, markedQueue, foregroundQueue) {
-  return dispatch.apply(_this$5, Object.keys(config)).on('composite', function (d) {
+  return dispatch.apply(_this, Object.keys(config)).on('composite', function (d) {
     ctx.foreground.globalCompositeOperation = d.value;
     ctx.brushed.globalCompositeOperation = d.value;
   }).on('alpha', function (d) {
@@ -4288,7 +3897,6 @@ var sideEffects = function sideEffects(config, ctx, pc, xscale, axis, flags, bru
     } else {
       config.bundleDimension = d.value;
     }
-
     config.clusterCentroids = computeClusterCentroids(config, config.bundleDimension);
     if (flags.interactive) {
       pc.render();
@@ -4320,27 +3928,30 @@ var getset = function getset(obj, state, events, side_effects) {
       }
       var old = state[key];
       state[key] = x;
-      side_effects.call(key, obj, { value: x, previous: old });
-      events.call(key, obj, { value: x, previous: old });
+      side_effects.call(key, obj, {
+        value: x,
+        previous: old
+      });
+      events.call(key, obj, {
+        value: x,
+        previous: old
+      });
       return obj;
     };
   });
 };
 
 // side effects for setters
-
 var d3_rebind = function d3_rebind(target, source, method) {
   return function () {
     var value = method.apply(source, arguments);
     return value === source ? target : value;
   };
 };
-
 var _rebind = function _rebind(target, source, method) {
   target[method] = d3_rebind(target, source, source[method]);
   return target;
 };
-
 var bindEvents = function bindEvents(__, ctx, pc, xscale, flags, brushedQueue, markedQueue, foregroundQueue, events, axis) {
   var side_effects = sideEffects(__, ctx, pc, xscale, axis, flags, brushedQueue, markedQueue, foregroundQueue);
 
@@ -4350,53 +3961,43 @@ var bindEvents = function bindEvents(__, ctx, pc, xscale, flags, brushedQueue, m
   // expose events
   // getter/setter with event firing
   _rebind(pc, events, 'on');
-
-  _rebind(pc, axis, 'ticks', 'orient', 'tickValues', 'tickSubdivide', 'tickSize', 'tickPadding', 'tickFormat');
+  _rebind(pc, axis, 'ticks');
 };
 
 // misc
-
 var ParCoords = function ParCoords(userConfig) {
   var state = initState(userConfig);
   var config = state.config,
-      events = state.events,
-      flags = state.flags,
-      xscale = state.xscale,
-      dragging = state.dragging,
-      axis = state.axis,
-      ctx = state.ctx,
-      canvas = state.canvas,
-      brush = state.brush;
-
-
+    events = state.events,
+    flags = state.flags,
+    xscale = state.xscale,
+    dragging = state.dragging,
+    axis = state.axis,
+    ctx = state.ctx,
+    canvas = state.canvas,
+    brush = state.brush;
   var pc = init(config, canvas, ctx);
-
   var position = function position(d) {
     if (xscale.range().length === 0) {
       xscale.range([0, w(config)], 1);
     }
     return dragging[d] == null ? xscale(d) : dragging[d];
   };
-
   var brushedQueue = renderQueue(pathBrushed(config, ctx, position)).rate(50).clear(function () {
     return pc.clear('brushed');
   });
-
   var markedQueue = renderQueue(pathMark(config, ctx, position)).rate(50).clear(function () {
     return pc.clear('marked');
   });
-
   var foregroundQueue = renderQueue(pathForeground(config, ctx, position)).rate(50).clear(function () {
     pc.clear('foreground');
     pc.clear('highlight');
   });
-
   bindEvents(config, ctx, pc, xscale, flags, brushedQueue, markedQueue, foregroundQueue, events, axis);
 
   // expose the state of the chart
   pc.state = config;
   pc.flags = flags;
-
   pc.autoscale = autoscale(config, pc, xscale, ctx);
   pc.scale = scale(config, pc);
   pc.flip = flip(config);
@@ -4411,13 +4012,12 @@ var ParCoords = function ParCoords(userConfig) {
   pc.render = render(config, pc, events);
   pc.renderBrushed = renderBrushed(config, pc, events);
   pc.renderMarked = renderMarked(config, pc, events);
-  pc.render.default = renderDefault(config, pc, ctx, position);
+  pc.render["default"] = renderDefault(config, pc, ctx, position);
   pc.render.queue = renderDefaultQueue(config, pc, foregroundQueue);
-  pc.renderBrushed.default = renderBrushedDefault(config, ctx, position, pc, brush);
+  pc.renderBrushed["default"] = renderBrushedDefault(config, ctx, position, pc, brush);
   pc.renderBrushed.queue = renderBrushedQueue(config, brush, brushedQueue);
-  pc.renderMarked.default = renderMarkedDefault(config, pc, ctx, position);
+  pc.renderMarked["default"] = renderMarkedDefault(config, pc, ctx, position);
   pc.renderMarked.queue = renderMarkedQueue(config, markedQueue);
-
   pc.compute_real_centroids = computeRealCentroids(config, position);
   pc.shadows = shadows(flags, pc);
   pc.axisDots = axisDots(config, pc, position);
@@ -4427,8 +4027,8 @@ var ParCoords = function ParCoords(userConfig) {
   pc.updateAxes = updateAxes(config, pc, position, axis, flags);
   pc.applyAxisConfig = applyAxisConfig;
   pc.brushable = brushable(config, pc, flags);
-  pc.brushReset = brushReset$4(config, pc);
-  pc.selected = selected$4(config, pc);
+  pc.brushReset = brushReset(config, pc);
+  pc.selected = selected(config, pc);
   pc.reorderable = reorderable(config, pc, xscale, position, dragging, flags);
 
   // Reorder dimensions, such that the highest value (visually) is on the left and
@@ -4481,16 +4081,14 @@ var ParCoords = function ParCoords(userConfig) {
   install2DStrums(brush, config, pc, events, xscale);
   installAngularBrush(brush, config, pc, events, xscale);
   install1DMultiAxes(brush, config, pc, events);
-
   pc.version = version;
   // this descriptive text should live with other introspective methods
   pc.toString = toString(config);
   pc.toType = toType;
   // try to coerce to number before returning type
   pc.toTypeCoerceNumbers = toTypeCoerceNumbers;
-
   return pc;
 };
 
-export default ParCoords;
+export { ParCoords as default };
 //# sourceMappingURL=parcoords.esm.js.map

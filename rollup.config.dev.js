@@ -1,30 +1,18 @@
-import babel from 'rollup-plugin-babel';
-import babelrc from 'babelrc-rollup';
-import resolve from 'rollup-plugin-node-resolve';
-import commonjs from 'rollup-plugin-commonjs';
-import postcss from 'rollup-plugin-postcss'
-import localResolve from 'rollup-plugin-local-resolve';
+import babel from '@rollup/plugin-babel';
+import resolve from '@rollup/plugin-node-resolve';
+import commonjs from '@rollup/plugin-commonjs';
+import postcss from 'rollup-plugin-postcss';
 import livereload from 'rollup-plugin-livereload';
 import serve from 'rollup-plugin-serve';
-import json from 'rollup-plugin-json';
+import json from '@rollup/plugin-json';
 
 export default {
     input: 'src/index.js',
     plugins: [
-        json({
-            exclude: [ 'node_modules' ],
-            preferConst: true,
-        }),
-        localResolve(),
+        json({ preferConst: true }),
         postcss({ extract: 'dist/parcoords.css' }),
-        babel(babelrc()),
-        resolve({
-            module: true,
-            jsnext: true,
-            main: true,
-            browser: true,
-            extensions: ['.js']
-        }),
+        babel({ babelHelpers: 'bundled' }),
+        resolve({ browser: true }),
         commonjs(),
         serve({
             open: true,

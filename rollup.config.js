@@ -1,35 +1,23 @@
-import babel from 'rollup-plugin-babel';
-import babelrc from 'babelrc-rollup';
-import resolve from 'rollup-plugin-node-resolve';
-import commonjs from 'rollup-plugin-commonjs';
-import postcss from 'rollup-plugin-postcss'
-import localResolve from 'rollup-plugin-local-resolve';
-import json from 'rollup-plugin-json';
+import babel from '@rollup/plugin-babel';
+import resolve from '@rollup/plugin-node-resolve';
+import commonjs from '@rollup/plugin-commonjs';
+import postcss from 'rollup-plugin-postcss';
+import json from '@rollup/plugin-json';
+import { readFileSync } from 'fs';
 
-let pkg = require('./package.json');
-let external = Object.keys(pkg.dependencies);
+const pkg = JSON.parse(readFileSync('./package.json', 'utf8'));
+const external = Object.keys(pkg.dependencies);
 
 export default {
     input: 'src/index.js',
     plugins: [
-        json({
-            exclude: [ 'node_modules' ],
-            preferConst: true,
-        }),
-        localResolve(),
+        json({ preferConst: true }),
         postcss({ extract: 'dist/parcoords.css' }),
-        babel(babelrc()),
-        resolve({
-            module: true,
-            jsnext: true,
-            main: true,
-            browser: true,
-            extensions: ['.js']
-        }),
+        babel({ babelHelpers: 'bundled' }),
+        resolve({ browser: true }),
         commonjs(),
-
     ],
-    external: external,
+    external,
     output: [
         {
             file: pkg.main,
