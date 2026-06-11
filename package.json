@@ -1,5 +1,5 @@
 {
-  "name": "@jkasprzyk/parcoord-es",
+  "name": "@jrkasprzyk/parcoord-es",
   "version": "3.0.0",
   "description": "ES6 module of Parallel Coordinates, based on d3 v7 modules",
   "main": "dist/parcoords.js",
