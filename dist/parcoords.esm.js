@@ -3743,7 +3743,7 @@ var scale = function scale(config, pc) {
   };
 };
 
-const version = "2.2.10";
+const version = "3.0.0";
 
 var DefaultConfig = {
   data: [],
