@@ -12,7 +12,7 @@ export default {
     input: 'src/index.js',
     plugins: [
         json({ preferConst: true }),
-        postcss({ extract: 'dist/parcoords.css' }),
+        postcss({ extract: 'parcoords.css' }),
         babel({ babelHelpers: 'bundled' }),
         resolve({ browser: true }),
         commonjs(),
