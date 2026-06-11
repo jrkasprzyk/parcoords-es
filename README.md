@@ -1,6 +1,16 @@
-# parcoords-es
+# @jrkasprzyk/parcoord-es
 
-ES6 module of Syntagmatic's [Parallel Coordinates](https://github.com/syntagmatic/parallel-coordinates) (aka. parcoords). This library is completely based on D3 V5 API. 
+[![npm version](https://img.shields.io/npm/v/%40jrkasprzyk%2Fparcoord-es.svg)](https://www.npmjs.com/package/@jrkasprzyk/parcoord-es)
+
+A maintained fork of [BigFatDog/parcoords-es](https://github.com/BigFatDog/parcoords-es), an ES6 module of Syntagmatic's [Parallel Coordinates](https://github.com/syntagmatic/parallel-coordinates) (aka. parcoords). This library is completely based on the D3 V7 API.
+
+## About this fork
+
+The upstream `parcoord-es` package is built on D3 V5 and is no longer actively maintained. This fork:
+
+* Migrates the library to **D3 V7** modules
+* Updates the build toolchain (Rollup 4, Babel 7, ESLint 8, Mocha 11) and resolves all known dependency vulnerabilities
+* Is published to npm as [`@jrkasprzyk/parcoord-es`](https://www.npmjs.com/package/@jrkasprzyk/parcoord-es)
 
 
 ## Features
@@ -20,13 +30,13 @@ This section only lists api that are <b>deviated</b> from the original parallel 
 
 <a name="parcoords_brush_extents" href="#parcoords_brush_extents">#</a> parcoords.<b>brushExtents</b>(extents) supports 1D multi brushes:
 
-1D brush [<>](https://github.com/BigFatDog/parcoords-es/blob/master/demo/setterForBrushes.html "Source")
+1D brush [<>](https://github.com/jrkasprzyk/parcoords-es/blob/master/demo/setterForBrushes.html "Source")
 ```javascript
   .brushMode("1D-axes")
   .brushExtents({"2": [3,4]});
 ```
 
-1D multi brush [<>](https://github.com/BigFatDog/parcoords-es/blob/master/demo/setterForMultiBrushes.html "Source")
+1D multi brush [<>](https://github.com/jrkasprzyk/parcoords-es/blob/master/demo/setterForMultiBrushes.html "Source")
 ```javascript
   .brushMode("1D-axes-multi")
   .brushExtents({"2": [[3,4], [6,8], [10, 14]]});
@@ -56,7 +66,7 @@ const data = [...];
 const pc = ParCoords().data(data)...;
 parcoords.mark(data.filter(d => d.volume > 10));
 ```
-Please refer to [marking demo](https://github.com/BigFatDog/parcoords-es/blob/develop/demo/marking.html "Source") for details
+Please refer to [marking demo](https://github.com/jrkasprzyk/parcoords-es/blob/master/demo/marking.html "Source") for details
 
 <a name="parcoords_unmark" href="#parcoords_unmark">#</a> parcoords.<b>unmark</b>()
 clears all permanently highlighted data that is added by <a href="#parcoords_marking">mark([values])</a>
@@ -76,35 +86,33 @@ parcoords.on('brushstart', function(brushed, args){
     } = args;
 })
 ```
-Please refer to [brushing with arguments demo](https://github.com/BigFatDog/parcoords-es/blob/develop/demo/brush-with-arguments.html "Source") for details
+Please refer to [brushing with arguments demo](https://github.com/jrkasprzyk/parcoords-es/blob/master/demo/brush-with-arguments.html "Source") for details
 
 ## Usage
 
 ### ES6
 1. Install library in your project
 ```
-npm install parcoord-es --save
+npm install @jrkasprzyk/parcoord-es --save
 ```
 
 2. import module
 
 ```
-import 'parcoord-es/dist/parcoords.css';
-import ParCoords from 'parcoord-es';
+import '@jrkasprzyk/parcoord-es/dist/parcoords.css';
+import ParCoords from '@jrkasprzyk/parcoord-es';
 
 const chart = ParCoords()....
 ```
 ### Standalone
 
-parcoords.standalone.js contains all dependencies and can be used directly in your html page. Please note that only essential D3 V5 modules are bundled, your global namespace won't be polluted.
+parcoords.standalone.js contains all dependencies and can be used directly in your html page. Please note that only essential D3 V7 modules are bundled, your global namespace won't be polluted.
 ```
 <link rel="stylesheet" type="text/css" href="./parcoords.css">
 <script src="./parcoords.standalone.js"></script>
 
 var parcoords = ParCoords()("#example")
 ```
-
-You are free to use either D3 V3 or D3 V5 in your html. demo/superformula.html demonstrates how to use parcoords-es with d3 V3.
 
 ## Development
 
@@ -142,7 +150,7 @@ npm run test:cover
 
 ## Built With
 
-* [D3 V5](https://d3js.org/) - D3 modules are used
+* [D3 V7](https://d3js.org/) - D3 modules are used
 * [Rollup](https://github.com/rollup/rollup) - Module bundler
 
 
@@ -151,7 +159,7 @@ npm run test:cover
 This project is licensed under the MIT License - see the [LICENSE.md](LICENSE.md) file for details
 
 ## Contributors
-This project gets supports from open-source community. Many thanks to our [contributors](https://github.com/BigFatDog/parcoords-es/graphs/contributors)
+This project gets supports from open-source community. Many thanks to the [upstream contributors](https://github.com/BigFatDog/parcoords-es/graphs/contributors)
 
 ## Contribution Notes
 Run `npm run pretty` before committing.
