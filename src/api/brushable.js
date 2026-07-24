@@ -21,12 +21,17 @@ const brushable = (config, pc, flags) =>
           select(this).call(
             config.dimensions[d]['brush']
               .on('start', function(event) {
-                if (event.sourceEvent !== null && !event.sourceEvent.ctrlKey) {
+                // `!=` also catches the undefined d3 v6+ uses for a
+                // programmatic brush.move, which `!== null` let through
+                // straight into the .ctrlKey dereference below.
+                if (event.sourceEvent != null && !event.sourceEvent.ctrlKey) {
                   pc.brushReset();
                 }
               })
               .on('brush', function(event) {
-                if (!event.sourceEvent.ctrlKey) {
+                // A programmatic brush.move leaves sourceEvent undefined in
+                // d3 v6+; treat that as "no Ctrl key" rather than dereferencing.
+                if (!(event.sourceEvent && event.sourceEvent.ctrlKey)) {
                   pc.brush();
                 }
               })
@@ -35,7 +40,7 @@ const brushable = (config, pc, flags) =>
                 // store important brush information and
                 // the html element of the selection,
                 // to make a dummy selection element
-                if (event.sourceEvent.ctrlKey) {
+                if (event.sourceEvent && event.sourceEvent.ctrlKey) {
                   let html = select(this)
                     .select('.selection')
                     .nodes()[0].outerHTML;

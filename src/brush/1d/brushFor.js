@@ -26,11 +26,11 @@ const brushFor = (state, config, pc, events, brushGroup) => (
 
   const _brush = brushY(_selector).extent([[-15, 0], [15, brushRangeMax]]);
 
-  const convertBrushArguments = args => {
-    const args_array = Array.prototype.slice.call(args);
-    const axis = args_array[0];
-
-    const raw = brushSelection(args_array[2][0]) || [];
+  // d3 v6+ invokes listeners as (event, datum); the v5 (datum, index, nodes)
+  // layout this used to slice out of `arguments` no longer exists. The axis name
+  // is already in scope above, and the node is the listener's `this`.
+  const convertBrushArguments = node => {
+    const raw = brushSelection(node) || [];
 
     // handle hidden axes which will not have a yscale
     let yscale = null;
@@ -42,8 +42,8 @@ const brushFor = (state, config, pc, events, brushGroup) => (
     const scaled = invertByScale(raw, yscale);
 
     return {
-      axis: args_array[0],
-      node: args_array[2][0],
+      axis,
+      node,
       selection: {
         raw,
         scaled,
@@ -53,12 +53,14 @@ const brushFor = (state, config, pc, events, brushGroup) => (
 
   _brush
     .on('start', function(event) {
-      if (event.sourceEvent !== null) {
+      // d3 v6+ leaves sourceEvent undefined for a programmatic brush.move,
+      // where v5 set it to null; `!=` catches both.
+      if (event.sourceEvent != null) {
         events.call(
           'brushstart',
           pc,
           config.brushed,
-          convertBrushArguments(arguments)
+          convertBrushArguments(this)
         );
         if (typeof event.sourceEvent.stopPropagation === 'function') {
           event.sourceEvent.stopPropagation();
@@ -70,7 +72,7 @@ const brushFor = (state, config, pc, events, brushGroup) => (
         config,
         pc,
         events,
-        convertBrushArguments(arguments)
+        convertBrushArguments(this)
       )(selected(state, config, brushGroup)());
     })
     .on('end', function() {
@@ -79,7 +81,7 @@ const brushFor = (state, config, pc, events, brushGroup) => (
         'brushend',
         pc,
         config.brushed,
-        convertBrushArguments(arguments)
+        convertBrushArguments(this)
       );
     });
 
