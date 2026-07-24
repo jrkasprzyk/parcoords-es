@@ -21,7 +21,10 @@ const brushable = (config, pc, flags) =>
           select(this).call(
             config.dimensions[d]['brush']
               .on('start', function(event) {
-                if (event.sourceEvent !== null && !event.sourceEvent.ctrlKey) {
+                // `!=` also catches the undefined d3 v6+ uses for a
+                // programmatic brush.move, which `!== null` let through
+                // straight into the .ctrlKey dereference below.
+                if (event.sourceEvent != null && !event.sourceEvent.ctrlKey) {
                   pc.brushReset();
                 }
               })

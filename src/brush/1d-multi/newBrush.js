@@ -45,7 +45,9 @@ const newBrush = (state, config, pc, events, brushGroup) => (
 
   brush
     .on('start', function(event) {
-      if (event.sourceEvent !== null) {
+      // d3 v6+ leaves sourceEvent undefined for a programmatic brush.move,
+      // where v5 set it to null; `!=` catches both.
+      if (event.sourceEvent != null) {
         events.call('brushstart', pc, config.brushed);
         if (typeof event.sourceEvent.stopPropagation === 'function') {
           event.sourceEvent.stopPropagation();
