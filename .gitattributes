@@ -1,0 +1,13 @@
+# Source is edited from multiple platforms; store and check out LF so that a
+# Windows editor cannot silently rewrite an entire file's line endings and bury
+# a real change in a whole-file diff.
+#
+# Deliberately scoped to src/ and test/ rather than `*`: several tracked text
+# files still have CRLF blobs in the index (package.json, package-lock.json,
+# README.md, .gitignore, demo/data/*.csv, demo/lib/sylvester.js). A repo-wide
+# rule would renormalize each of those the next time it is touched -- e.g.
+# `npm version` would rewrite every line of package.json. Widening this to `*`
+# is the right long-term fix, but it should land as its own commit alongside
+# `git add --renormalize .` so the churn is intentional and reviewable.
+src/**   text eol=lf
+test/**  text eol=lf
